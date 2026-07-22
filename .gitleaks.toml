@@ -1,0 +1,23 @@
+title = "gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allowlist for test fixtures and known safe values"
+paths = [
+  '''\.env\.example$''',
+  '''\.env\.test$''',
+  '''test/''',
+  '''tests/''',
+  '''node_modules/''',
+  '''\.next/''',
+  '''dist/''',
+  '''build/''',
+  '''\.git/''',
+  '''docs/''',
+  '''README\.md''',
+  '''WHITEPAPER\.md''',
+  '''SECURITY_DESIGN\.md''',
+  '''PROJECT_SUMMARY\.md''',
+]

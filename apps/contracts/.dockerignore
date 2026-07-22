@@ -1,0 +1,16 @@
+node_modules
+cache
+artifacts
+.git
+.gitignore
+README.md
+.env
+*.log
+coverage
+coverage.json
+typechain
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store

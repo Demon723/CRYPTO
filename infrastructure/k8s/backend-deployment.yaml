@@ -1,0 +1,210 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cryptomind
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cryptomind-config
+  namespace: cryptomind
+data:
+  NODE_ENV: production
+  API_PREFIX: api/v1
+  CORS_ORIGIN: https://cryptomind.ai
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cryptomind-secrets
+  namespace: cryptomind
+type: Opaque
+stringData:
+  DATABASE_URL: postgresql://postgres:postgres@postgres:5432/cryptomind
+  JWT_SECRET: "your-super-secret-jwt-key"
+  JWT_REFRESH_SECRET: "your-super-secret-refresh-key"
+  REDIS_PASSWORD: ""
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: cryptomind
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: cryptomind/backend:latest
+          ports:
+            - containerPort: 4000
+          envFrom:
+            - configMapRef:
+                name: cryptomind-config
+            - secretRef:
+                name: cryptomind-secrets
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: cryptomind
+spec:
+  selector:
+    app: backend
+  ports:
+    - port: 4000
+      targetPort: 4000
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: cryptomind
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: cryptomind/frontend:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NEXT_PUBLIC_API_URL
+              value: "https://cryptomind.ai/api/v1"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 300m
+              memory: 512Mi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: cryptomind
+spec:
+  selector:
+    app: frontend
+  ports:
+    - port: 3000
+      targetPort: 3000
+  type: ClusterIP
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cryptomind-ingress
+  namespace: cryptomind
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager/cluster-issuer: letsencrypt-prod
+spec:
+  tls:
+    - hosts:
+        - cryptomind.ai
+        - www.cryptomind.ai
+      secretName: cryptomind-tls
+  rules:
+    - host: cryptomind.ai
+      http:
+        paths:
+          - path: /api/
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 4000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: backend-hpa
+  namespace: cryptomind
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: backend
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: frontend-hpa
+  namespace: cryptomind
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: frontend
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
