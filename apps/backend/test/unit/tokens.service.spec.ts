@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TokensService } from '../../src/modules/tokens/services/tokens.service';
+import { Chain } from '../../src/modules/wallets/entities/wallet.entity';
 import { PrismaService } from '../../src/modules/common/modules/prisma.service';
 import { HttpService } from '../../src/modules/common/modules/http.service';
 
@@ -47,7 +48,7 @@ describe('TokensService', () => {
     const mockTokens = [
       {
         address: '0x123',
-        chain: 'ETHEREUM',
+        chain: Chain.ETHEREUM,
         symbol: 'ETH',
         name: 'Ethereum',
         priceUsd: 2500,
@@ -61,7 +62,7 @@ describe('TokensService', () => {
 
     jest.spyOn(prismaService.token, 'findMany').mockResolvedValue(mockTokens as any);
 
-    const result = await service.searchTokens('ETH', 'ETHEREUM');
+    const result = await service.searchTokens('ETH', Chain.ETHEREUM);
     expect(result).toEqual(mockTokens);
   });
 
@@ -69,7 +70,7 @@ describe('TokensService', () => {
     const mockTokens = [
       {
         address: '0x123',
-        chain: 'ETHEREUM',
+        chain: Chain.ETHEREUM,
         symbol: 'ETH',
         name: 'Ethereum',
         isVerified: true,
@@ -79,7 +80,7 @@ describe('TokensService', () => {
 
     jest.spyOn(prismaService.token, 'findMany').mockResolvedValue(mockTokens as any);
 
-    const result = await service.getTrendingTokens('ETHEREUM');
+    const result = await service.getTrendingTokens(Chain.ETHEREUM);
     expect(result).toEqual(mockTokens);
   });
 });

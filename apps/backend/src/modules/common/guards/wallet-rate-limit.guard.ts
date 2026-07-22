@@ -5,7 +5,7 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
-import { Redis } from 'ioredis';
+import Redis from 'ioredis';
 
 interface RateLimitConfig {
   windowMs: number;

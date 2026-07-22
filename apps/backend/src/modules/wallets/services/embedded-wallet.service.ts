@@ -1,7 +1,6 @@
 // @ts-nocheck
 import { Injectable, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../common/modules/prisma.service';
-import { LoggerService } from '../../common/modules/logger.service';
 import { Chain, WalletType, WalletEntity } from '../entities/wallet.entity';
 import { CreateEmbeddedWalletDto } from '../dto/embedded-wallet.dto';
 import crypto from 'crypto';

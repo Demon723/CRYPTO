@@ -42,3 +42,8 @@ next-env.d.ts
 # Logs
 logs
 *.log
+
+# Test build artifacts
+dist-test/
+*.db
+.next

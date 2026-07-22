@@ -3,12 +3,10 @@ import {
   ForbiddenException,
   NotFoundException,
   BadRequestException,
-  Logger,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../common/modules/prisma.service';
 import { UpdateProfileDto, ChangePasswordDto, Enable2FADto } from '../dto';
-import { JwtPayload } from '../../auth/entities/user.entity';
 import { LoggerService } from '../../common/modules/logger.service';
 
 @Injectable()

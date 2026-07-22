@@ -73,17 +73,11 @@ import { configValidationSchema } from './modules/common/config.schema';
     AnalyticsModule,
     HealthModule,
     GovernanceModule,
-    AnalyticsModule,
-    HealthModule,
     StakingModule,
     DeveloperApiModule,
     ScannerModule,
     ReferralModule,
     WatchlistModule,
-    GovernanceModule,
-    AnalyticsModule,
-    HealthModule,
-    WebsocketModule,
-  ],
+    WebsocketModule,  ],
 })
 export class AppModule {}

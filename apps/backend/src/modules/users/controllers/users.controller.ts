@@ -10,7 +10,6 @@ import {
   HttpStatus,
   UsePipes,
   ValidationPipe,
-  Request,
 } from '@nestjs/common';
 import { UsersService } from '../services/users.service';
 import { UpdateProfileDto, ChangePasswordDto, Enable2FADto } from '../dto';

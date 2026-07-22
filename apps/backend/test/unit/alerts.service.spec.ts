@@ -3,6 +3,7 @@ import { AlertsService } from '../../src/modules/alerts/services/alerts.service'
 import { PrismaService } from '../../src/modules/common/modules/prisma.service';
 import { RedisService } from '../../src/modules/common/modules/redis.service';
 import { NotificationsService } from '../../src/modules/notifications/services/notifications.service';
+import { AlertType } from '../../src/modules/alerts/entities/alert.entity';
 
 describe('AlertsService', () => {
   let service: AlertsService;
@@ -58,7 +59,7 @@ describe('AlertsService', () => {
       {
         id: '1',
         userId: 'user-id',
-        type: 'PRICE',
+        type: AlertType.PRICE,
         status: 'ACTIVE',
         condition: { field: 'price', operator: '>', value: 3000 },
       },
@@ -74,7 +75,7 @@ describe('AlertsService', () => {
     const mockAlert = {
       id: '1',
       userId: 'user-id',
-      type: 'PRICE',
+      type: AlertType.PRICE,
       status: 'ACTIVE',
       condition: { field: 'price', operator: '>', value: 3000 },
       createdAt: new Date(),
@@ -83,7 +84,7 @@ describe('AlertsService', () => {
     jest.spyOn(prismaService.alert, 'create').mockResolvedValue(mockAlert as any);
 
     const result = await service.createAlert('user-id', {
-      type: 'PRICE',
+      type: AlertType.PRICE,
       condition: { field: 'price', operator: '>', value: 3000 },
     });
 

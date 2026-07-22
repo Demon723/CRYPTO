@@ -22,6 +22,6 @@ export class HealthService {
       () => this.redisService.healthCheck(),
     ];
 
-    return this.health.check(checks);
+    return this.health.check(checks as unknown as import('@nestjs/terminus').HealthIndicatorFunction[]);
   }
 }

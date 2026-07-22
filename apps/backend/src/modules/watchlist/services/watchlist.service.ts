@@ -4,7 +4,6 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
-  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/modules/prisma.service';
 import { WatchlistEntity, CreateWatchlistDto } from '../entities/watchlist.entity';

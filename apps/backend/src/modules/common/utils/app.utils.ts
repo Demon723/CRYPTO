@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
-import { Chain, WalletType } from '../../../modules/wallets/entities/wallet.entity';
-import { TransactionType, TransactionStatus } from '../../../modules/transactions/entities/transaction.entity';
+import { Chain, WalletType } from '../../wallets/entities/wallet.entity';
+import { TransactionType, TransactionStatus } from '../../transactions/entities/transaction.entity';
 
 export const generateId = (): string => randomUUID();
 

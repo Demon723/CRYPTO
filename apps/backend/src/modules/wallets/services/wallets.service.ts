@@ -4,13 +4,10 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
-  ForbiddenException,
-  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/modules/prisma.service';
 import { HttpService } from '../../common/modules/http.service';
 import { WalletEntity, WalletWithBalance, WalletCreateDto, Chain, WalletType } from '../entities/wallet.entity';
-import { LoggerService } from '../../common/modules/logger.service';
 import { isValidEthereumAddress, normalizeAddress, truncateAddress } from '../../common/utils/app.utils';
 import { TokenBalance } from '@prisma/client';
 

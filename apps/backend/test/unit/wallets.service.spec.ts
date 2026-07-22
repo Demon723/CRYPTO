@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { WalletsService } from '../../src/modules/wallets/services/wallets.service';
+import { Chain } from '../../src/modules/wallets/entities/wallet.entity';
 import { PrismaService } from '../../src/modules/common/modules/prisma.service';
 
 describe('WalletsService', () => {
@@ -39,7 +40,7 @@ describe('WalletsService', () => {
 
   it('should get user wallets', async () => {
     const mockWallets = [
-      { id: '1', address: '0x123', chain: 'ETHEREUM', isActive: true },
+      { id: '1', address: '0x123', chain: Chain.ETHEREUM, isActive: true },
     ];
 
     jest.spyOn(prismaService.wallet, 'findMany').mockResolvedValue(mockWallets as any);
@@ -53,7 +54,7 @@ describe('WalletsService', () => {
       id: '1',
       userId: 'user-id',
       address: '0x123',
-      chain: 'ETHEREUM',
+      chain: Chain.ETHEREUM,
       isActive: true,
     };
 
@@ -62,7 +63,7 @@ describe('WalletsService', () => {
 
     const result = await service.createWallet('user-id', {
       address: '0x123',
-      chain: 'ETHEREUM',
+      chain: Chain.ETHEREUM,
     });
 
     expect(result).toEqual(mockWallet);

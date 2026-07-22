@@ -10,12 +10,12 @@ export default function NotFound() {
         <CardHeader>
           <CardTitle className="text-6xl font-bold gradient-text mb-4">404</CardTitle>
           <CardDescription className="text-lg">
-            Oops! This page doesn't exist.
+            Oops! This page doesn&apos;t exist.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            The page you're looking for might have been removed, had its name changed, or is temporarily unavailable.
+            The page you&apos;re looking for might have been removed, had its name changed, or is temporarily unavailable.
           </p>
           <div className="flex gap-2 justify-center">
             <Button asChild variant="default">

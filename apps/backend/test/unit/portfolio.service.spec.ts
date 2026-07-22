@@ -50,8 +50,7 @@ describe('PortfolioService', () => {
     ];
 
     jest.spyOn(prismaService.wallet, 'findMany').mockResolvedValue(mockWallets as any);
-    jest.spyOn(prismaService, 'tokenBalance').mockResolvedValue([]);
-
+    
     const result = await service.getPortfolioSummary('user-id');
     expect(result).toBeDefined();
     expect(result.totalValueUsd).toBeDefined();
