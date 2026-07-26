@@ -11,6 +11,7 @@ node_modules
 # Production
 /build
 /dist
+dist/
 
 # Misc
 .DS_Store
@@ -47,3 +48,12 @@ logs
 dist-test/
 *.db
 .next
+
+# Hardhat
+artifacts/
+cache/
+typechain-types/
+deployments/
+
+# Kilo
+.kilo/
