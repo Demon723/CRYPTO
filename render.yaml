@@ -1,0 +1,145 @@
+services:
+  - type: postgres
+    name: synex-db
+    plan: free
+    region: oregon
+    postgresqlVersion: "16"
+
+  - type: redis
+    name: synex-redis
+    plan: free
+    region: oregon
+    maxmemoryPolicy: allkeys-lru
+
+  - type: web
+    name: synex-backend
+    plan: free
+    region: oregon
+    runtime: node
+    buildCommand: |
+      npm install -g pnpm corepack &&
+      cd apps/backend &&
+      pnpm install --frozen-lockfile &&
+      pnpm run build &&
+      pnpm run db:generate &&
+      pnpm run db:migrate
+    startCommand: cd apps/backend && pnpm run start:prod
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: API_PREFIX
+        value: api/v1
+      - key: CORS_ORIGIN
+        fromService:
+          type: web
+          name: synex-frontend
+          property: host
+      - key: DATABASE_URL
+        fromDatabase:
+          name: synex-db
+          property: connectionString
+      - key: DIRECT_URL
+        fromDatabase:
+          name: synex-db
+          property: connectionString
+      - key: REDIS_HOST
+        fromService:
+          type: redis
+          name: synex-redis
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          type: redis
+          name: synex-redis
+          property: port
+      - key: REDIS_PASSWORD
+        fromService:
+          type: redis
+          name: synex-redis
+          property: password
+      - key: REDIS_DB
+        value: "1"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 30d
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ETHERSCAN_API_KEY
+        sync: false
+      - key: PLATFORM_TOKEN_ADDRESS
+        value: "0x62248d00Bce13BE2D8838bDe86fEc95487949b89"
+      - key: PLATFORM_TOKEN_SYMBOL
+        value: LXON
+      - key: PLATFORM_TOKEN_DECIMALS
+        value: "18"
+      - key: LXON_RPC_URL
+        value: https://ethereum-sepolia.publicnode.com
+      - key: FRONTEND_URL
+        fromService:
+          type: web
+          name: synex-frontend
+          property: host
+      - key: ADMIN_EMAILS
+        value: admin@lxon.ai
+      - key: BCRYPT_ROUNDS
+        value: "12"
+      - key: RATE_LIMIT_WINDOW_MS
+        value: "900000"
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: "100"
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: GOVERNANCE_VOTING_PERIOD_DAYS
+        value: "7"
+      - key: GOVERNANCE_QUORUM_PERCENTAGE
+        value: "10"
+      - key: STAKING_REWARD_RATE
+        value: "12"
+      - key: STAKING_LOCK_PERIOD_DAYS
+        value: "30"
+      - key: LOG_LEVEL
+        value: info
+    healthCheckPath: /api/v1/health
+
+  - type: web
+    name: synex-frontend
+    plan: free
+    region: oregon
+    runtime: node
+    buildCommand: |
+      npm install -g pnpm corepack &&
+      cd apps/frontend &&
+      pnpm install &&
+      pnpm run build
+    startCommand: cd apps/frontend && pnpm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: synex-backend
+          property: host
+      - key: NEXTAUTH_URL
+        fromService:
+          type: web
+          name: synex-frontend
+          property: host
+      - key: NEXTAUTH_SECRET
+        generateValue: true
+      - key: NEXT_PUBLIC_APP_URL
+        fromService:
+          type: web
+          name: synex-frontend
+          property: host
+      - key: NEXT_PUBLIC_PLATFORM_TOKEN_ADDRESS
+        value: "0x62248d00Bce13BE2D8838bDe86fEc95487949b89"
+      - key: NEXT_PUBLIC_PLATFORM_TOKEN_SYMBOL
+        value: LXON
