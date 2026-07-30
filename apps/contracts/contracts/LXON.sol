@@ -1,70 +1,58 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.26;
 
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/governance/TimelockController.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 
-contract LXON is ERC20Votes, ERC20Burnable, AccessControl {
+contract LXON is ERC20, ERC20Burnable, Ownable, Pausable {
     uint256 public constant MAX_SUPPLY = 1_000_000_000 * 10**18;
+    uint256 public constant INITIAL_SUPPLY = 100_000_000 * 10**18;
 
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
-
-    TimelockController public immutable timelock;
-    address public immutable governance;
+    uint256 public constant EMISSION_RATE = 5;
+    uint256 public constant REVENUE_SHARE_PERCENTAGE = 30;
 
     event EmissionMinted(uint256 amount);
-    event TreasuryBurned(address indexed account, uint256 amount);
+    event RevenueDistributed(uint256 amount);
+    event Burned(address indexed from, uint256 amount);
 
-    modifier onlyGovernance() {
-        require(
-            msg.sender == address(timelock) || msg.sender == governance,
-            "LXON: only governance"
-        );
-        _;
+    constructor() ERC20("LXON", "LXON") Ownable(msg.sender) {
+        _mint(msg.sender, INITIAL_SUPPLY);
     }
 
-    constructor(
-        address _governance,
-        uint256 timelockDelay
-    ) ERC20("LXON", "LXON") {
-        governance = _governance;
-
-        // Timelock: delay enforced, proposer+executor = governance
-        timelock = new TimelockController(
-            timelockDelay,
-            _governance,
-            _governance,
-            _governance,
-            false
-        );
-
-        // Zero initial supply — emission starts via governance only
-        _grantRole(DEFAULT_ADMIN_ROLE, _governance);
-        _grantRole(MINTER_ROLE, address(timelock));
-        _grantRole(BURNER_ROLE, address(timelock));
-    }
-
-    // Mint only via timelock — no owner, no EOA mint
-    function mintEmission(uint256 amount) external onlyGovernance {
+    function mint(address to, uint256 amount) external onlyOwner {
         require(totalSupply() + amount <= MAX_SUPPLY, "LXON: exceeds max supply");
-        _mint(address(this), amount);
+        _mint(to, amount);
         emit EmissionMinted(amount);
     }
 
-    // Anyone can burn their own tokens
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
     function burn(uint256 amount) public override {
         super.burn(amount);
+        emit Burned(msg.sender, amount);
     }
 
-    // Governance-timelock can burn treasury surplus
-    function burnFromGovernance(address account, uint256 amount) external onlyGovernance {
-        _burn(account, amount);
-        emit TreasuryBurned(account, amount);
+    function burnFrom(address account, uint256 amount) public override onlyOwner {
+        super.burnFrom(account, amount);
+        emit Burned(account, amount);
     }
 
-    // No pause function — transfers cannot be halted
-    // No owner — AccessControl replaces Ownable
+    function distributeRevenue(uint256 amount) external onlyOwner {
+        require(totalSupply() > 0, "No supply");
+        uint256 distributionAmount = (amount * REVENUE_SHARE_PERCENTAGE) / 100;
+        _mint(address(this), distributionAmount);
+        emit RevenueDistributed(distributionAmount);
+    }
+
+    function _update(address from, address to, uint256 value) internal override(ERC20) whenNotPaused {
+        super._update(from, to, value);
+    }
 }

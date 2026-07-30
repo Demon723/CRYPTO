@@ -6,7 +6,8 @@ dotenv.config();
 
 const config: HardhatUserConfig = {
   solidity: {
-    version: '0.8.20',
+    evmVersion: 'cancun',
+    version: '0.8.26',
     settings: {
       optimizer: {
         enabled: true,
@@ -27,6 +28,11 @@ const config: HardhatUserConfig = {
       url: process.env.SEPOLIA_RPC_URL || '',
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 11155111,
+    },
+    base: {
+      url: process.env.BASE_RPC_URL || 'https://mainnet.base.org',
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 8453,
     },
     mainnet: {
       url: process.env.MAINNET_RPC_URL || '',
