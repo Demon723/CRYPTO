@@ -29,6 +29,7 @@ import {
   Key,
   Globe,
   ChevronRight,
+  Rocket,
 } from 'lucide-react';
 
 const navigation = [
@@ -42,6 +43,7 @@ const navigation = [
   { name: 'NFTs', href: '/nfts', icon: TrendingUp },
   { name: 'Alerts', href: '/alerts', icon: Bell },
   { name: 'Staking', href: '/staking', icon: Coins },
+  { name: 'Deployments', href: '/deployments', icon: Rocket },
   { name: 'Governance', href: '/governance', icon: Vote },
   { name: 'API Keys', href: '/api', icon: Key },
   { name: 'Referrals', href: '/referrals', icon: Gift },

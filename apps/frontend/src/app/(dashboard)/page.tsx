@@ -15,6 +15,11 @@ import {
   Plus,
   ExternalLink,
   Activity,
+  Rocket,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Link,
 } from 'lucide-react';
 import apiClient from '@/lib/api-client';
 import Link from 'next/link';
@@ -42,9 +47,46 @@ interface TransactionSummary {
   byChain: Record<string, number>;
 }
 
+interface DeploymentSummary {
+  id: string;
+  name: string;
+  chain: string;
+  status: string;
+  contractAddress?: string;
+  gasCostUsd?: number;
+  createdAt: string;
+}
+
+interface DashboardStats {
+  totalBalance: number;
+  totalTransactions: number;
+  totalVolumeUsd: string;
+  walletCount: number;
+  deploymentCount: number;
+  activeDeployments: number;
+  failedDeployments: number;
+}
+
+interface DeploymentShort {
+  id: string;
+  name: string;
+  chain: string;
+  status: string;
+  contractAddress?: string;
+  gasCostUsd?: number;
+  createdAt: string;
+}
+
 export default function DashboardPage() {
   const [wallets, setWallets] = useState<WalletSummary[]>([]);
   const [stats, setStats] = useState<TransactionSummary | null>(null);
+  const [deployments, setDeployments] = useState<DeploymentShort[]>([]);
+  const [deploymentStats, setDeploymentStats] = useState<{
+    totalDeployments: number;
+    activeDeployments: number;
+    failedDeployments: number;
+    totalGasCostUsd: string;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -53,13 +95,17 @@ export default function DashboardPage() {
 
   const fetchDashboardData = async () => {
     try {
-      const [walletsRes, statsRes] = await Promise.all([
+      const [walletsRes, statsRes, deploymentsRes, depStatsRes] = await Promise.all([
         apiClient.get('/wallets'),
         apiClient.get('/transactions/stats'),
+        apiClient.get('/deployments').catch(() => ({ data: [] })),
+        apiClient.get('/deployments/stats').catch(() => ({ data: null })),
       ]);
 
       setWallets(walletsRes.data);
       setStats(statsRes.data);
+      setDeployments(deploymentsRes.data.slice(0, 5));
+      setDeploymentStats(depStatsRes.data);
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
     } finally {
@@ -72,6 +118,10 @@ export default function DashboardPage() {
   }, 0);
 
   const recentTransactions = wallets.flatMap((w) => w.balances).slice(0, 5);
+
+  const totalDeployments = deploymentStats?.totalDeployments ?? deployments.length;
+  const activeDeployments = deploymentStats?.activeDeployments ?? deployments.filter((d) => d.status === 'DEPLOYED').length;
+  const failedDeployments = deploymentStats?.failedDeployments ?? deployments.filter((d) => d.status === 'FAILED').length;
 
   if (isLoading) {
     return (
@@ -93,6 +143,12 @@ export default function DashboardPage() {
             <Link href="/wallets">
               <Plus className="mr-2 h-4 w-4" />
               Add Wallet
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/deployments">
+              <Rocket className="mr-2 h-4 w-4" />
+              Deployments
             </Link>
           </Button>
         </div>
@@ -136,12 +192,14 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">AI Queries</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Deployments</CardTitle>
+            <Rocket className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground mt-1">Today</p>
+            <div className="text-2xl font-bold">{totalDeployments}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {activeDeployments} active &middot; {failedDeployments} failed
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -149,6 +207,7 @@ export default function DashboardPage() {
       <Tabs defaultValue="wallets" className="space-y-4">
         <TabsList>
           <TabsTrigger value="wallets">Wallets</TabsTrigger>
+          <TabsTrigger value="deployments">Deployments</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
           <TabsTrigger value="insights">Insights</TabsTrigger>
         </TabsList>
@@ -209,6 +268,86 @@ export default function DashboardPage() {
               </Card>
             )}
           </div>
+        </TabsContent>
+
+        <TabsContent value="deployments" className="space-y-4">
+          {deployments.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Rocket className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No deployments yet</h3>
+                <p className="text-sm text-muted-foreground text-center mb-4">
+                  Deploy your first smart contract to get started
+                </p>
+                <Button asChild>
+                  <Link href="/deployments">View All Deployments</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              <div className="grid gap-4 md:grid-cols-3">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Total</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{totalDeployments}</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Active</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-green-600">{activeDeployments}</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Failed</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-red-600">{failedDeployments}</div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="space-y-3">
+                {deployments.map((deployment) => (
+                  <Card key={deployment.id} className="hover:shadow-lg transition-shadow">
+                    <CardContent className="flex items-center justify-between p-4">
+                      <div className="flex items-center gap-3">
+                        {getDeploymentStatusIcon(deployment.status)}
+                        <div>
+                          <p className="font-medium text-sm">{deployment.name}</p>
+                          <p className="text-xs text-muted-foreground">{deployment.chain}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Badge className={getDeploymentStatusColor(deployment.status)}>
+                          {deployment.status}
+                        </Badge>
+                        {deployment.contractAddress && (
+                          <Link
+                            href={`https://etherscan.io/address/${deployment.contractAddress}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                          </Link>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              <Button variant="outline" className="w-full" asChild>
+                <Link href="/deployments">View All Deployments</Link>
+              </Button>
+            </>
+          )}
         </TabsContent>
 
         <TabsContent value="activity" className="space-y-4">
@@ -288,9 +427,69 @@ export default function DashboardPage() {
                 </Button>
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Rocket className="h-5 w-5" />
+                  Deployments Overview
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Manage your smart contract deployments and track gas costs.
+                </p>
+                <div className="space-y-2 mb-4">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Total</span>
+                    <span className="font-medium">{totalDeployments}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Active</span>
+                    <span className="font-medium text-green-600">{activeDeployments}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Failed</span>
+                    <span className="font-medium text-red-600">{failedDeployments}</span>
+                  </div>
+                </div>
+                <Button variant="outline" className="w-full" asChild>
+                  <Link href="/deployments">Manage Deployments</Link>
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
       </Tabs>
     </div>
   );
+}
+
+function getDeploymentStatusIcon(status: string) {
+  switch (status) {
+    case 'DEPLOYED':
+      return <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />;
+    case 'FAILED':
+      return <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />;
+    case 'PENDING':
+    case 'DEPLOYING':
+      return <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />;
+    default:
+      return <Activity className="h-5 w-5 text-muted-foreground" />;
+  }
+}
+
+function getDeploymentStatusColor(status: string) {
+  switch (status) {
+    case 'DEPLOYED':
+      return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+    case 'FAILED':
+      return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+    case 'PENDING':
+      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+    case 'DEPLOYING':
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
 }
