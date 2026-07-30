@@ -111,7 +111,7 @@ jobs:
   test-contracts:
     name: Contract Tests
     runs-on: ubuntu-latest
-    if: hashFiles('apps/contracts/package.json') != ''
+
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v2
