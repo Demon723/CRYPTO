@@ -140,3 +140,11 @@ export enum LogLevel {
   INFO = 'INFO',
   DEBUG = 'DEBUG',
 }
+
+export enum DeploymentStatus {
+  PENDING = 'PENDING',
+  DEPLOYING = 'DEPLOYING',
+  DEPLOYED = 'DEPLOYED',
+  FAILED = 'FAILED',
+  CANCELLED = 'CANCELLED',
+}
