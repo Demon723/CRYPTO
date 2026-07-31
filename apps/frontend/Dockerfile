@@ -6,11 +6,11 @@ RUN apk add --no-cache libc6-compat
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
-RUN corepack enable && pnpm install --frozen-lockfile
+RUN npm install
 
 COPY . .
 
-RUN pnpm run build
+RUN npm run build
 
 FROM node:20-alpine AS runner
 
