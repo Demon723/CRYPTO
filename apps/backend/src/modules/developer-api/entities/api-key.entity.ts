@@ -4,7 +4,7 @@ export interface ApiKeyEntity {
   name: string;
   keyHash: string;
   keyPrefix: string;
-  permissions: Record<string, boolean>;
+  permissions: string;
   lastUsedAt?: Date;
   expiresAt?: Date;
   isActive: boolean;

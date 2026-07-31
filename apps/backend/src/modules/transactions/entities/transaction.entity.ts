@@ -38,7 +38,7 @@ export interface TransactionEntity {
   decodedFunction?: string;
   contractAddress?: string;
   tokenSymbol?: string;
-  metadata?: Record<string, unknown>;
+  metadata?: string;
   createdAt: Date;
 }
 

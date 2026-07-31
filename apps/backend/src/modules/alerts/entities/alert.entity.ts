@@ -28,7 +28,7 @@ export interface AlertEntity {
   userId: string;
   walletId?: string;
   type: AlertType;
-  condition: Record<string, unknown>;
+  condition: string;
   status: AlertStatus;
   lastTriggeredAt?: Date;
   triggerCount: number;

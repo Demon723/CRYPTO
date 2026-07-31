@@ -63,8 +63,8 @@ export class StakingService {
       data: {
         userId,
         walletId: dto.walletId,
-        amount: amount.toFixed(18),
-        apy: this.defaultApy.toFixed(4),
+        amount,
+        apy: this.defaultApy,
         startDate,
         endDate,
         status: StakingStatus.ACTIVE,

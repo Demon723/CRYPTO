@@ -38,7 +38,6 @@ export class SubscriptionsService {
     const features = PLAN_FEATURES[plan];
 
     const existing = await this.getUserSubscription(userId);
-// @ts-ignore
     if (existing && existing.status === SubscriptionStatus.ACTIVE) {
       throw new BadRequestException('User already has an active subscription');
     }
@@ -55,15 +54,16 @@ export class SubscriptionsService {
         startDate: now,
         endDate: subscriptionEnd,
         aiQueryLimit: features.aiQueriesPerDay,
-        features,
+        features: JSON.stringify(features),
       },
     });
 
-// @ts-ignore
     this.logger.log(`Subscription created: ${subscription.id} for user ${userId}`, 'SubscriptionsService');
 
-    // @ts-ignore
-    return subscription;
+    return {
+      ...subscription,
+      features: typeof subscription.features === 'string' ? JSON.parse(subscription.features) : subscription.features,
+    };
   }
 
   async updateSubscription(
@@ -77,14 +77,17 @@ export class SubscriptionsService {
       where: { id: current.id },
       data: {
         plan: newPlan,
-        features: newFeatures,
+        features: JSON.stringify(newFeatures),
         aiQueryLimit: newFeatures.aiQueriesPerDay,
       },
     });
 
     this.logger.log(`Subscription updated to ${newPlan} for user ${userId}`, 'SubscriptionsService');
 
-    return updated;
+    return {
+      ...updated,
+      features: typeof updated.features === 'string' ? JSON.parse(updated.features) : updated.features,
+    };
   }
 // @ts-ignore
 
@@ -143,14 +146,19 @@ export class SubscriptionsService {
       });
 
       if (freeSubscription) {
-        return freeSubscription;
+        return {
+          ...freeSubscription,
+          features: typeof freeSubscription.features === 'string' ? JSON.parse(freeSubscription.features) : freeSubscription.features,
+        };
       }
 
       return this.createSubscription(userId, SubscriptionPlan.FREE);
     }
 
-    // @ts-ignore
-    return subscription;
+    return {
+      ...subscription,
+      features: typeof subscription.features === 'string' ? JSON.parse(subscription.features) : subscription.features,
+    };
   }
 
   async getSubscriptionHistory(userId: string, page = 1, limit = 20) {

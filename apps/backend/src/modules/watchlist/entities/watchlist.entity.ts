@@ -2,7 +2,7 @@ export interface WatchlistEntity {
   id: string;
   userId: string;
   name: string;
-  symbols: string[];
+  symbols: string;
   isPublic: boolean;
   createdAt: Date;
   updatedAt: Date;

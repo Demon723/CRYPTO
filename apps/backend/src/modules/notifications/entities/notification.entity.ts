@@ -12,7 +12,7 @@ export interface NotificationEntity {
   type: NotificationType;
   title: string;
   message: string;
-  data?: Record<string, unknown>;
+  data?: string;
   isRead: boolean;
   readAt?: Date;
   createdAt: Date;

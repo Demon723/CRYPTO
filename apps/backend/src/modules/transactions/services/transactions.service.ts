@@ -207,6 +207,7 @@ export class TransactionsService {
         status: (tx.txreceipt_status === '1' ? TransactionStatus.CONFIRMED : TransactionStatus.FAILED) as TransactionStatus,
         contractAddress: (tx.to as string) || undefined,
         tokenSymbol: this.getTokenSymbol(chain),
+        ...(tx.data && { metadata: JSON.stringify(tx.data) }),
       }));
     } catch (error) {
       this.logger.warn(`Failed to fetch transactions: ${error.message}`, 'TransactionsService');

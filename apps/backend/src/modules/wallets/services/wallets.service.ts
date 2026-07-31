@@ -4,6 +4,7 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/modules/prisma.service';
 import { HttpService } from '../../common/modules/http.service';

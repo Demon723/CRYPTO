@@ -22,7 +22,7 @@ export interface SubscriptionEntity {
   cancelAtPeriodEnd: boolean;
   aiQueryLimit: number;
   aiQueriesUsed: number;
-  features: Record<string, boolean>;
+  features: string;
   createdAt: Date;
   updatedAt: Date;
 }

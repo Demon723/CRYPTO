@@ -155,7 +155,10 @@ export class NftsService {
         traits: asset.traits?.reduce((acc: Record<string, string>, trait: Record<string, string>) => {
           acc[trait.trait_type] = trait.value;
           return acc;
-        }, {}),
+        }, {}) ? JSON.stringify(asset.traits?.reduce((acc: Record<string, string>, trait: Record<string, string>) => {
+          acc[trait.trait_type] = trait.value;
+          return acc;
+        }, {})) : null,
       })) || [];
     } catch (error) {
       this.logger.warn(`Failed to fetch NFTs from OpenSea: ${error.message}`, 'NftsService');

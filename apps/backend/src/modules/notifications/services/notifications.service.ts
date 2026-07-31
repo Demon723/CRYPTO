@@ -54,7 +54,10 @@ export class NotificationsService {
       throw new NotFoundException('Notification not found');
     }
 
-    return notification as any;
+    return {
+      ...notification,
+      data: typeof notification.data === 'string' ? JSON.parse(notification.data) : notification.data,
+    };
   }
 
   async createNotification(dto: CreateNotificationDto): Promise<NotificationEntity> {
@@ -65,7 +68,7 @@ export class NotificationsService {
         type: dto.type,
         title: dto.title,
         message: dto.message,
-        data: dto.data,
+        data: dto.data ? JSON.stringify(dto.data) : null,
       },
     });
 
@@ -74,7 +77,10 @@ export class NotificationsService {
 
     this.logger.log(`Notification created: ${notification.id}`, 'NotificationsService');
 
-    return notification as any;
+    return {
+      ...notification,
+      data: typeof notification.data === 'string' ? JSON.parse(notification.data) : notification.data,
+    };
   }
 
   async markAsRead(userId: string, notificationId: string): Promise<NotificationEntity> {

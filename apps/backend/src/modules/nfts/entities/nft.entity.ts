@@ -10,7 +10,7 @@ export interface NftEntity {
   floorPriceUsd?: string;
   lastSalePriceUsd?: string;
   rarityRank?: number;
-  traits?: Record<string, string>;
+  traits?: string;
   lastUpdated: Date;
   createdAt: Date;
 }

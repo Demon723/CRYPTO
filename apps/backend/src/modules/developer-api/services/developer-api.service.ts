@@ -65,7 +65,7 @@ export class DeveloperApiService {
       name: apiKey.name,
       keyPrefix: apiKey.keyPrefix,
       key: `${this.apiKeyPrefix}${rawKey}`,
-      permissions: apiKey.permissions,
+      permissions: typeof apiKey.permissions === 'string' ? JSON.parse(apiKey.permissions) : apiKey.permissions,
       lastUsedAt: apiKey.lastUsedAt,
       expiresAt: apiKey.expiresAt,
       isActive: apiKey.isActive,

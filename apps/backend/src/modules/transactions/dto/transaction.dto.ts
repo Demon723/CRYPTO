@@ -9,7 +9,7 @@ export class IndexTransactionsDto {
 
   @IsString()
   @IsNotEmpty()
-  @IsIn(['ethereum', 'polygon', 'bsc', 'arbitrum', 'base', 'avalanche'], {
+  @IsIn(['ETHEREUM', 'POLYGON', 'BSC', 'ARBITRUM', 'BASE', 'AVALANCHE'], {
     message: 'Chain must be ethereum, polygon, bsc, arbitrum, base, or avalanche',
   })
   chain: string;

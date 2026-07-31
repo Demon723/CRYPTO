@@ -1,11 +1,13 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { WebSocketGateway, WebSocketServer, SubscribeMessage, MessageBody, ConnectedSocket } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../common/modules/prisma.service';
 
-@Injectable()
+@WebSocketGateway()
 export class WebsocketGateway implements OnModuleInit, OnModuleDestroy {
-  private server: Server;
+  @WebSocketServer()
+  server: Server;
 
   constructor(
     private readonly jwtService: JwtService,
@@ -13,13 +15,6 @@ export class WebsocketGateway implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   onModuleInit() {
-    this.server = new Server({
-      cors: {
-        origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-        credentials: true,
-      },
-    });
-
     this.server.use(async (socket: Socket, next) => {
       try {
         const token = socket.handshake.auth.token?.replace('Bearer ', '');

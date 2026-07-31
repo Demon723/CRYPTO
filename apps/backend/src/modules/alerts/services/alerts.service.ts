@@ -65,11 +65,11 @@ export class AlertsService {
       where: { id: alertId },
       data: {
         status: updates.status || alert.status,
-        condition: updates.condition || alert.condition,
+        condition: updates.condition ? JSON.stringify(updates.condition) : alert.condition,
       },
     });
 
-    return updated;
+    return this.mapToEntity(updated);
   }
 
   async pauseAlert(userId: string, alertId: string): Promise<any> {

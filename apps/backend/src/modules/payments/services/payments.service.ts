@@ -36,7 +36,7 @@ export class PaymentsService {
         invoiceId: dto.invoiceId,
         provider: dto.provider,
         providerPaymentId: dto.providerPaymentId,
-        amount: dto.amount.toFixed(2),
+        amount: dto.amount,
         currency: dto.currency || 'USD',
 // @ts-ignore
         status: PaymentStatus.PENDING,
