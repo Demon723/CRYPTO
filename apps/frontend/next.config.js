@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
+
 const nextConfig = {
-  output: "standalone",
   reactStrictMode: true,
   swcMinify: true,
   poweredByHeader: false,
