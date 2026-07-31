@@ -1,19 +1,18 @@
-FROM node:20-slim AS base
+FROM node:20-alpine AS base
 
 FROM base AS deps
+RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml* ./
-RUN corepack enable && pnpm install --frozen-lockfile
+COPY package.json ./
+RUN npm install --omit=dev
 
 FROM base AS builder
 WORKDIR /app
-
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-RUN pnpm prisma generate
-RUN pnpm run build
+RUN npm run build
 
 FROM base AS runner
 WORKDIR /app
