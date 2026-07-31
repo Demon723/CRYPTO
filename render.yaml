@@ -1,16 +1,4 @@
 services:
-  - type: postgres
-    name: synex-db
-    plan: free
-    region: oregon
-    postgresqlVersion: "16"
-
-  - type: redis
-    name: synex-redis
-    plan: free
-    region: oregon
-    maxmemoryPolicy: allkeys-lru
-
   - type: web
     name: synex-backend
     plan: free
@@ -31,47 +19,25 @@ services:
       - key: API_PREFIX
         value: api/v1
       - key: CORS_ORIGIN
-        fromService:
-          type: web
-          name: synex-frontend
-          property: host
+        value: https://synex-frontend.onrender.com
       - key: DATABASE_URL
-        fromDatabase:
-          name: synex-db
-          property: connectionString
-      - key: DIRECT_URL
-        fromDatabase:
-          name: synex-db
-          property: connectionString
+        value: postgresql://postgres:postgres@localhost:5432/synex?schema=public
       - key: REDIS_HOST
-        fromService:
-          type: redis
-          name: synex-redis
-          property: host
+        value: localhost
       - key: REDIS_PORT
-        fromService:
-          type: redis
-          name: synex-redis
-          property: port
+        value: "6379"
       - key: REDIS_PASSWORD
-        fromService:
-          type: redis
-          name: synex-redis
-          property: password
+        value: ""
       - key: REDIS_DB
         value: "1"
       - key: JWT_SECRET
-        generateValue: true
+        value: change-me-in-production
       - key: JWT_REFRESH_SECRET
-        generateValue: true
+        value: change-me-in-production
       - key: JWT_EXPIRES_IN
         value: 7d
       - key: JWT_REFRESH_EXPIRES_IN
         value: 30d
-      - key: OPENAI_API_KEY
-        sync: false
-      - key: ETHERSCAN_API_KEY
-        sync: false
       - key: PLATFORM_TOKEN_ADDRESS
         value: "0x62248d00Bce13BE2D8838bDe86fEc95487949b89"
       - key: PLATFORM_TOKEN_SYMBOL
@@ -80,11 +46,6 @@ services:
         value: "18"
       - key: LXON_RPC_URL
         value: https://ethereum-sepolia.publicnode.com
-      - key: FRONTEND_URL
-        fromService:
-          type: web
-          name: synex-frontend
-          property: host
       - key: ADMIN_EMAILS
         value: admin@lxon.ai
       - key: BCRYPT_ROUNDS
@@ -94,7 +55,7 @@ services:
       - key: RATE_LIMIT_MAX_REQUESTS
         value: "100"
       - key: SESSION_SECRET
-        generateValue: true
+        value: change-me-in-production
       - key: GOVERNANCE_VOTING_PERIOD_DAYS
         value: "7"
       - key: GOVERNANCE_QUORUM_PERCENTAGE
@@ -121,22 +82,13 @@ services:
       - key: NODE_ENV
         value: production
       - key: NEXT_PUBLIC_API_URL
-        fromService:
-          type: web
-          name: synex-backend
-          property: host
+        value: https://synex-backend.onrender.com/api/v1
       - key: NEXTAUTH_URL
-        fromService:
-          type: web
-          name: synex-frontend
-          property: host
+        value: https://synex-frontend.onrender.com
       - key: NEXTAUTH_SECRET
-        generateValue: true
+        value: change-me-in-production
       - key: NEXT_PUBLIC_APP_URL
-        fromService:
-          type: web
-          name: synex-frontend
-          property: host
+        value: https://synex-frontend.onrender.com
       - key: NEXT_PUBLIC_PLATFORM_TOKEN_ADDRESS
         value: "0x62248d00Bce13BE2D8838bDe86fEc95487949b89"
       - key: NEXT_PUBLIC_PLATFORM_TOKEN_SYMBOL
