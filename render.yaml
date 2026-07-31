@@ -18,7 +18,7 @@ services:
     runtime: node
     buildCommand: |
       corepack enable &&
-      pnpm install --frozen-lockfile &&
+      pnpm install --no-frozen-lockfile &&
       pnpm run build:backend &&
       pnpm run db:generate &&
       pnpm run db:migrate
@@ -115,7 +115,7 @@ services:
     runtime: node
     buildCommand: |
       corepack enable &&
-      pnpm install --frozen-lockfile &&
+      pnpm install --no-frozen-lockfile &&
       pnpm run build:frontend
     startCommand: pnpm run start
     workingDirectory: /opt/render/project/src/apps/frontend
