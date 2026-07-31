@@ -1,18 +1,19 @@
-FROM node:20-alpine AS base
+FROM node:20-slim AS base
 
 FROM base AS deps
-RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
-COPY package.json ./
-RUN npm install --omit=dev
+COPY package.json pnpm-lock.yaml* ./
+RUN corepack enable && pnpm install --frozen-lockfile
 
 FROM base AS builder
 WORKDIR /app
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-RUN npm run build
+RUN pnpm prisma generate
+RUN pnpm run build
 
 FROM base AS runner
 WORKDIR /app
@@ -25,11 +26,10 @@ RUN adduser --system --uid 1001 nestjs
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/prisma ./prisma
 
 USER nestjs
 
 EXPOSE 4000
 
 CMD ["node", "dist/main"]
-# Render cache bust
-# Render cache bust
