@@ -42,7 +42,7 @@ model User {
   payments         Payment[]
   auditLogs        AuditLog[]
   systemLogs       SystemLog[]
-  Deployment       Deployment[]
+  deployments      Deployment[]
 
   @@index([email])
   @@index([createdAt])
