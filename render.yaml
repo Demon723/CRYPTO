@@ -16,7 +16,7 @@ services:
     plan: free
     region: oregon
     runtime: docker
-    dockerfilePath: apps/backend/Dockerfile
+    dockerfilePath: apps/backend/Dockerfile.prod
     envVars:
       - key: NODE_ENV
         value: production
@@ -106,7 +106,7 @@ services:
     plan: free
     region: oregon
     runtime: docker
-    dockerfilePath: apps/frontend/Dockerfile
+    dockerfilePath: apps/frontend/Dockerfile.prod
     envVars:
       - key: NODE_ENV
         value: production
