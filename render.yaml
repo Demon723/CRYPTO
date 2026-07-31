@@ -17,13 +17,12 @@ services:
     region: oregon
     runtime: node
     buildCommand: |
-      corepack enable &&
-      pnpm install --no-frozen-lockfile &&
-      pnpm run build:backend &&
-      pnpm run db:generate &&
-      pnpm run db:migrate
-    startCommand: pnpm run start
-    workingDirectory: /opt/render/project/src/apps/backend
+      cd apps/backend &&
+      npm install &&
+      npm run build &&
+      npm run db:generate &&
+      npm run db:migrate
+    startCommand: cd apps/backend && npm run start:prod
     envVars:
       - key: NODE_ENV
         value: production
@@ -114,11 +113,10 @@ services:
     region: oregon
     runtime: node
     buildCommand: |
-      corepack enable &&
-      pnpm install --no-frozen-lockfile &&
-      pnpm run build:frontend
-    startCommand: pnpm run start
-    workingDirectory: /opt/render/project/src/apps/frontend
+      cd apps/frontend &&
+      npm install &&
+      npm run build
+    startCommand: cd apps/frontend && npm run start
     envVars:
       - key: NODE_ENV
         value: production
