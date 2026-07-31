@@ -15,14 +15,8 @@ services:
     name: synex-backend
     plan: free
     region: oregon
-    runtime: node
-    buildCommand: |
-      cd apps/backend &&
-      npm install &&
-      npm run build &&
-      npm run db:generate &&
-      npm run db:migrate
-    startCommand: cd apps/backend && npm run start:prod
+    runtime: docker
+    dockerfilePath: apps/backend/Dockerfile
     envVars:
       - key: NODE_ENV
         value: production
@@ -111,12 +105,8 @@ services:
     name: synex-frontend
     plan: free
     region: oregon
-    runtime: node
-    buildCommand: |
-      cd apps/frontend &&
-      npm install &&
-      npm run build
-    startCommand: cd apps/frontend && npm run start
+    runtime: docker
+    dockerfilePath: apps/frontend/Dockerfile
     envVars:
       - key: NODE_ENV
         value: production
