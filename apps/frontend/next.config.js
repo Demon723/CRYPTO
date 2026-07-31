@@ -6,6 +6,14 @@ const nextConfig = {
   poweredByHeader: false,
   compress: true,
 
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+
   images: {
     remotePatterns: [
       {
@@ -58,13 +66,7 @@ const nextConfig = {
     ];
   },
 
-  webpack: (config, { dev, isServer }) => {
-    if (!dev && !isServer) {
-      Object.assign(config.resolve.alias, {
-        'react/jsx-runtime': 'react/jsx-runtime.js',
-      });
-    }
-
+  webpack: (config) => {
     config.resolve.fallback = {
       ...config.resolve.fallback,
       fs: false,

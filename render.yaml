@@ -7,7 +7,7 @@ services:
     buildCommand: |
       cd apps/backend &&
       npm install &&
-      npm run build &&
+      npx nest build &&
       npm run db:generate &&
       npm run db:migrate
     startCommand: cd apps/backend && npm run start:prod
@@ -19,7 +19,7 @@ services:
       - key: API_PREFIX
         value: api/v1
       - key: CORS_ORIGIN
-        value: https://synex-frontend.onrender.com
+        value: https://synex-frontend-faei.onrender.com
       - key: DATABASE_URL
         value: postgresql://postgres:postgres@localhost:5432/synex?schema=public
       - key: REDIS_HOST
@@ -82,13 +82,13 @@ services:
       - key: NODE_ENV
         value: production
       - key: NEXT_PUBLIC_API_URL
-        value: https://synex-backend.onrender.com/api/v1
+        value: https://synex-backend-xvwv.onrender.com/api/v1
       - key: NEXTAUTH_URL
-        value: https://synex-frontend.onrender.com
+        value: https://synex-frontend-faei.onrender.com
       - key: NEXTAUTH_SECRET
         value: change-me-in-production
       - key: NEXT_PUBLIC_APP_URL
-        value: https://synex-frontend.onrender.com
+        value: https://synex-frontend-faei.onrender.com
       - key: NEXT_PUBLIC_PLATFORM_TOKEN_ADDRESS
         value: "0x62248d00Bce13BE2D8838bDe86fEc95487949b89"
       - key: NEXT_PUBLIC_PLATFORM_TOKEN_SYMBOL
