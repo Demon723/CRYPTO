@@ -22,7 +22,7 @@ import {
   Link,
 } from 'lucide-react';
 import apiClient from '@/lib/api-client';
-import Link from 'next/link';
+import NextLink from 'next/link';
 
 interface WalletSummary {
   id: string;
@@ -140,16 +140,16 @@ export default function DashboardPage() {
         </div>
         <div className="flex gap-2">
           <Button asChild>
-            <Link href="/wallets">
+            <NextLink href="/wallets">
               <Plus className="mr-2 h-4 w-4" />
               Add Wallet
-            </Link>
+            </NextLink>
           </Button>
           <Button asChild variant="outline">
-            <Link href="/deployments">
+            <NextLink href="/deployments">
               <Rocket className="mr-2 h-4 w-4" />
               Deployments
-            </Link>
+            </NextLink>
           </Button>
         </div>
       </div>
@@ -262,7 +262,7 @@ export default function DashboardPage() {
                     Add your first wallet to start tracking your crypto assets
                   </p>
                   <Button asChild>
-                    <Link href="/wallets">Add Wallet</Link>
+                    <NextLink href="/wallets">Add Wallet</NextLink>
                   </Button>
                 </CardContent>
               </Card>
@@ -280,7 +280,7 @@ export default function DashboardPage() {
                   Deploy your first smart contract to get started
                 </p>
                 <Button asChild>
-                  <Link href="/deployments">View All Deployments</Link>
+                  <NextLink href="/deployments">View All Deployments</NextLink>
                 </Button>
               </CardContent>
             </Card>
@@ -329,13 +329,13 @@ export default function DashboardPage() {
                           {deployment.status}
                         </Badge>
                         {deployment.contractAddress && (
-                          <Link
+                          <NextLink
                             href={`https://etherscan.io/address/${deployment.contractAddress}`}
                             target="_blank"
                             rel="noopener noreferrer"
                           >
                             <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                          </Link>
+                          </NextLink>
                         )}
                       </div>
                     </CardContent>
@@ -344,7 +344,7 @@ export default function DashboardPage() {
               </div>
 
               <Button variant="outline" className="w-full" asChild>
-                <Link href="/deployments">View All Deployments</Link>
+                <NextLink href="/deployments">View All Deployments</NextLink>
               </Button>
             </>
           )}
@@ -406,7 +406,7 @@ export default function DashboardPage() {
                   Track your portfolio performance over time with advanced analytics.
                 </p>
                 <Button variant="outline" className="w-full" asChild>
-                  <Link href="/portfolio">View Analytics</Link>
+                  <NextLink href="/portfolio">View Analytics</NextLink>
                 </Button>
               </CardContent>
             </Card>
@@ -423,7 +423,7 @@ export default function DashboardPage() {
                   Get AI-powered market insights and trend analysis.
                 </p>
                 <Button variant="outline" className="w-full" asChild>
-                  <Link href="/ai">Chat with AI</Link>
+                  <NextLink href="/ai">Chat with AI</NextLink>
                 </Button>
               </CardContent>
             </Card>
@@ -454,7 +454,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <Button variant="outline" className="w-full" asChild>
-                  <Link href="/deployments">Manage Deployments</Link>
+                  <NextLink href="/deployments">Manage Deployments</NextLink>
                 </Button>
               </CardContent>
             </Card>
