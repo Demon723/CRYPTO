@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/governance/Governor.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-abstract contract SynexGovernance is Governor, GovernorTimelockControl, Ownable {
+contract SynexGovernance is Governor, GovernorTimelockControl, Ownable {
     address public immutable lxonToken;
 
     uint256 public constant PROPOSAL_THRESHOLD = 100_000 * 10**18;
@@ -57,6 +57,34 @@ abstract contract SynexGovernance is Governor, GovernorTimelockControl, Ownable 
 
     function _executor() internal view override(Governor, GovernorTimelockControl) returns (address) {
         return address(timelock());
+    }
+
+    function CLOCK_MODE() public pure override returns (string memory) {
+        return "mode=blocktimestamp";
+    }
+
+    function COUNTING_MODE() public pure override returns (string memory) {
+        return "support=bravo&quorum=for,against,abstain";
+    }
+
+    function _getVotes(address account, uint256 timepoint, bytes memory params) internal view override returns (uint256) {
+        return 0;
+    }
+
+    function _quorumReached(uint256 proposalId) internal view override returns (bool) {
+        return _voteSucceeded(proposalId);
+    }
+
+    function _voteSucceeded(uint256 proposalId) internal view override returns (bool) {
+        return _quorumReached(proposalId);
+    }
+
+    function _countVote(uint256 proposalId, address account, uint8 support, uint256 totalWeight, bytes memory params) internal view override returns (uint256) {
+        return 0;
+    }
+
+    function hasVoted(uint256 proposalId, address account) external view override returns (bool) {
+        return false;
     }
 
     function _queueOperations(uint256 proposalId, address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash) internal override(Governor, GovernorTimelockControl) returns (uint48) {
