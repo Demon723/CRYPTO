@@ -54,7 +54,7 @@ describe('ScannerService', () => {
   it('should analyze a contract', async () => {
     const mockToken = {
       id: '1',
-      address: '0x123',
+      address: '0x1234567890123456789012345678901234567890',
       chain: 'ETHEREUM',
       name: 'Test Token',
       riskScore: 0,

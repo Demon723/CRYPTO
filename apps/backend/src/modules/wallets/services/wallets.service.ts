@@ -4,8 +4,8 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
-  Logger,
 } from '@nestjs/common';
+import { LoggerService } from '../../common/modules/logger.service';
 import { PrismaService } from '../../common/modules/prisma.service';
 import { HttpService } from '../../common/modules/http.service';
 import { WalletEntity, WalletWithBalance, WalletCreateDto, Chain, WalletType } from '../entities/wallet.entity';

@@ -15,7 +15,7 @@ export class HealthController {
   @ApiOperation({ summary: 'Health check' })
   @ApiResponse({ status: 200, description: 'Service is healthy' })
   @ApiResponse({ status: 503, description: 'Service is degraded' })
-  async health(@Ip() ip: string) {
+  async health(@Ip() ip?: string) {
     const checks = {
       database: 'unknown',
       redis: 'unknown',
