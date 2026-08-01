@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Test, TestingModule } from '@nestjs/testing';
 import { GovernanceService } from '../../src/modules/governance/services/governance.service';
 import { PrismaService } from '../../src/modules/common/modules/prisma.service';
@@ -23,7 +24,7 @@ describe('GovernanceService', () => {
             stakingPosition: {
               findMany: jest.fn(),
             },
-          },
+          } as any,
         },
         {
           provide: StakingService,

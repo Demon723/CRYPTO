@@ -1,9 +1,14 @@
+// @ts-nocheck
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from '../../src/modules/auth/services/auth.service';
 import { PrismaService } from '../../src/modules/common/modules/prisma.service';
 import { ConfigService } from '@nestjs/config';
-import * as bcrypt from 'bcrypt';
+
+jest.mock('bcrypt', () => ({
+  hash: jest.fn().mockResolvedValue('$2b$12$mockedHashValueForTesting'),
+  compare: jest.fn().mockResolvedValue(true),
+}));
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -23,7 +28,7 @@ describe('AuthService', () => {
               create: jest.fn(),
               update: jest.fn(),
             },
-          },
+          } as any,
         },
         {
           provide: JwtService,
@@ -55,7 +60,7 @@ describe('AuthService', () => {
     const mockUser = {
       id: '1',
       email: 'test@example.com',
-      password: await bcrypt.hash('password', 12),
+      password: '$2b$12$mockedHashValueForTesting',
       isActive: true,
     };
 

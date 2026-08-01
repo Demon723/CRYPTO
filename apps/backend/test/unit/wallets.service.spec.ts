@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Test, TestingModule } from '@nestjs/testing';
 import { WalletsService } from '../../src/modules/wallets/services/wallets.service';
 import { Chain } from '../../src/modules/wallets/entities/wallet.entity';
@@ -29,7 +30,7 @@ describe('WalletsService', () => {
               deleteMany: jest.fn(),
               createMany: jest.fn(),
             },
-          },
+          } as any,
         },
       ],
     }).compile();

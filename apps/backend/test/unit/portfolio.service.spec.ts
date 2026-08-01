@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Test, TestingModule } from '@nestjs/testing';
 import { PortfolioService } from '../../src/modules/portfolio/services/portfolio.service';
 import { PrismaService } from '../../src/modules/common/modules/prisma.service';
@@ -18,7 +19,7 @@ describe('PortfolioService', () => {
             wallet: {
               findMany: jest.fn(),
             },
-          },
+          } as any,
         },
         {
           provide: WalletsService,

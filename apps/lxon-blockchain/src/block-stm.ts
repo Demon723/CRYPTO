@@ -56,7 +56,6 @@ export class MultiVersionDataStructure {
     }
   }
 
-  // Helper to dump active state for testing/debugging
   public dumpState(): Record<string, any> {
     const state: Record<string, any> = {};
     for (const [key, entries] of this.data.entries()) {
@@ -71,8 +70,23 @@ export class MultiVersionDataStructure {
 export interface Transaction {
   read_keys: string[];
   write_dict?: Record<string, any>;
-  // Logic to execute the transaction dynamically based on values read from state
   logic?: (reads: Record<string, any>) => Record<string, any>;
+}
+
+export interface DAGVertex {
+  hash: string;
+  transaction: Transaction;
+  parents: string[];
+  round: number;
+  author: string;
+  timestamp: number;
+}
+
+export interface MEVBlock {
+  transactions: Transaction[];
+  vertexHash: string;
+  round: number;
+  parentVertex: string | null;
 }
 
 export class BlockSTMEngine {
@@ -81,7 +95,11 @@ export class BlockSTMEngine {
   public incarnations: number[];
   public readSets: Record<string, number | null>[];
   public writeSets: Set<string>[];
-  
+  public dag: Map<string, DAGVertex> = new Map();
+  public mevResistant: boolean = false;
+  public pendingDAG: DAGVertex[] = [];
+  public executionOrder: string[] = [];
+
   public executionIdx = 0;
   public validationIdx = 0;
 
@@ -98,14 +116,12 @@ export class BlockSTMEngine {
     const dynamicReadValues: Record<string, any> = {};
     const tx = this.txs[txIndex];
 
-    // 1. Perform reads against the multi-version state
     for (const readKey of tx.read_keys) {
       const [val, writer] = this.mvds.read(readKey, txIndex);
       localReadSet[readKey] = writer;
       dynamicReadValues[readKey] = val;
     }
 
-    // 2. Compute writes (either static write_dict or dynamic logic evaluation)
     let localWriteSet: Record<string, any> = {};
     if (tx.logic) {
       localWriteSet = tx.logic(dynamicReadValues);
@@ -119,12 +135,10 @@ export class BlockSTMEngine {
     this.readSets[txIndex] = localReadSet;
     this.writeSets[txIndex] = newWriteKeys;
 
-    // 3. Write outputs to MVDS speculatively
     for (const [wKey, wVal] of Object.entries(localWriteSet)) {
       this.mvds.write(wKey, txIndex, incarnation, wVal);
     }
 
-    // 4. Clean up any keys that were written in previous incarnation but not in this one
     const removedKeys = new Set<string>();
     for (const key of prevWriteKeys) {
       if (!newWriteKeys.has(key)) {
@@ -134,7 +148,7 @@ export class BlockSTMEngine {
 
     if (removedKeys.size > 0) {
       this.mvds.remove_writes(txIndex, removedKeys);
-      return true; // Write set changed
+      return true;
     }
 
     return false;
@@ -145,14 +159,69 @@ export class BlockSTMEngine {
     for (const [key, expectedWriter] of Object.entries(recordedReads)) {
       const [, currentWriter] = this.mvds.read(key, txIndex);
       if (currentWriter !== expectedWriter) {
-        return false; // Validation failed: Read-After-Write conflict
+        return false;
       }
     }
-    return true; // Validated successfully
+    return true;
   }
 
-  // Collaborative parallel scheduler simulation
-  // Mimics processing block across multiple threads
+  public add_to_dag(vertex: DAGVertex): void {
+    this.dag.set(vertex.hash, vertex);
+    this.pendingDAG.push(vertex);
+  }
+
+  public topological_sort(): string[] {
+    const sorted: string[] = [];
+    const visited = new Set<string>();
+    const temp = new Set<string>();
+
+    const visit = (hash: string): boolean => {
+      if (temp.has(hash)) return false;
+      if (visited.has(hash)) return true;
+
+      temp.add(hash);
+      const vertex = this.dag.get(hash);
+      if (vertex) {
+        for (const parent of vertex.parents) {
+          if (!visit(parent)) return false;
+        }
+      }
+      temp.delete(hash);
+      visited.add(hash);
+      sorted.push(hash);
+      return true;
+    };
+
+    for (const hash of this.dag.keys()) {
+      if (!visited.has(hash)) {
+        visit(hash);
+      }
+    }
+
+    return sorted;
+  }
+
+  public detect_mev_conflict(txIndex: number): boolean {
+    if (!this.mevResistant) return false;
+
+    const tx = this.txs[txIndex];
+    const writeKeys = Object.keys(tx.write_dict || {});
+
+    for (const key of writeKeys) {
+      for (const [otherHash, otherVertex] of this.dag.entries()) {
+        if (otherVertex.transaction.read_keys.includes(key) ||
+            Object.keys(otherVertex.transaction.write_dict || {}).includes(key)) {
+          const otherTxIndex = parseInt(otherHash.slice(0, 8), 16) % this.numTxs;
+          if (otherTxIndex !== txIndex && otherTxIndex < txIndex) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
   public async process_block(numThreads: number): Promise<void> {
     const workerPromises: Promise<void>[] = [];
 
@@ -161,7 +230,6 @@ export class BlockSTMEngine {
         let txToExec: number | null = null;
         let txToVal: number | null = null;
 
-        // Synchronized task picking
         synchronizedBlock: {
           if (this.executionIdx < this.numTxs) {
             txToExec = this.executionIdx;
@@ -178,36 +246,109 @@ export class BlockSTMEngine {
           const inc = this.incarnations[txToExec];
           this.execute_transaction(txToExec, inc);
 
-          // Trigger validation check on current index
+          if (this.mevResistant) {
+            this.detect_mev_conflict(txToExec);
+          }
+
           synchronizedBlock: {
             this.validationIdx = Math.min(this.validationIdx, txToExec);
           }
         } else if (txToVal !== null) {
           const isValid = this.validate_transaction(txToVal);
           if (!isValid) {
-            // Conflict found! Increment incarnation, delete speculative writes, and schedule re-execution
             synchronizedBlock: {
               this.incarnations[txToVal] += 1;
               this.mvds.remove_writes(txToVal, this.writeSets[txToVal]);
               this.writeSets[txToVal].clear();
-              
-              // Roll back execution and validation indices
+
               this.executionIdx = Math.min(this.executionIdx, txToVal);
               this.validationIdx = Math.min(this.validationIdx, txToVal + 1);
             }
           }
         }
 
-        // yield macro-task to simulate parallel latency overlap
         await new Promise(resolve => setImmediate(resolve));
       }
     };
 
-    // Spawn virtual threads
     for (let i = 0; i < numThreads; i++) {
       workerPromises.push(workerLoop());
     }
 
     await Promise.all(workerPromises);
+  }
+
+  public async process_block_deferred(numThreads: number): Promise<{ executionOrder: string[]; finalState: Record<string, any> }> {
+    const executionOrder: string[] = [];
+
+    const orderingPhase = async () => {
+      const sorted = this.topological_sort();
+      for (const hash of sorted) {
+        const vertex = this.dag.get(hash);
+        if (vertex) {
+          executionOrder.push(hash);
+        }
+      }
+    };
+
+    await orderingPhase();
+
+    const workerPromises: Promise<void>[] = [];
+    const workerLoop = async () => {
+      loop: while (true) {
+        let txToExec: number | null = null;
+        let txToVal: number | null = null;
+
+        synchronizedBlock: {
+          if (this.executionIdx < this.numTxs) {
+            txToExec = this.executionIdx;
+            this.executionIdx += 1;
+          } else if (this.validationIdx < this.numTxs) {
+            txToVal = this.validationIdx;
+            this.validationIdx += 1;
+          } else {
+            break loop;
+          }
+        }
+
+        if (txToExec !== null) {
+          const inc = this.incarnations[txToExec];
+          this.execute_transaction(txToExec, inc);
+
+          if (this.mevResistant) {
+            this.detect_mev_conflict(txToExec);
+          }
+
+          synchronizedBlock: {
+            this.validationIdx = Math.min(this.validationIdx, txToExec);
+          }
+        } else if (txToVal !== null) {
+          const isValid = this.validate_transaction(txToVal);
+          if (!isValid) {
+            synchronizedBlock: {
+              this.incarnations[txToVal] += 1;
+              this.mvds.remove_writes(txToVal, this.writeSets[txToVal]);
+              this.writeSets[txToVal].clear();
+
+              this.executionIdx = Math.min(this.executionIdx, txToVal);
+              this.validationIdx = Math.min(this.validationIdx, txToVal + 1);
+            }
+          }
+        }
+
+        await new Promise(resolve => setImmediate(resolve));
+      }
+    };
+
+    for (let i = 0; i < numThreads; i++) {
+      workerPromises.push(workerLoop());
+    }
+
+    await Promise.all(workerPromises);
+
+    return {
+      executionOrder,
+      finalState: this.mvds.dumpState(),
+    };
   }
 }

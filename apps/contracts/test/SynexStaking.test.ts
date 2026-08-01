@@ -43,27 +43,27 @@ describe('SynexStaking', function () {
   describe('Staking', function () {
     it('Should allow users to stake tokens', async function () {
       await lxon.connect(user1).approve(await staking.getAddress(), STAKE_AMOUNT);
-      await expect(staking.connect(user1).stake(STAKE_AMOUNT))
+      await expect(staking.connect(user1).stake(STAKE_AMOUNT, 0))
         .to.emit(staking, 'Staked')
-        .withArgs(user1.address, STAKE_AMOUNT, 0);
+        .withArgs(user1.address, STAKE_AMOUNT, 0, 0);
 
       expect(await staking.totalStaked(user1.address)).to.equal(STAKE_AMOUNT);
       expect(await staking.totalStakedAmount()).to.equal(STAKE_AMOUNT);
     });
 
     it('Should reject staking 0 tokens', async function () {
-      await expect(staking.connect(user1).stake(0)).to.be.revertedWith('Cannot stake 0');
+      await expect(staking.connect(user1).stake(0, 0)).to.be.revertedWith('Below minimum stake');
     });
 
     it('Should reject staking without approval', async function () {
-      await expect(staking.connect(user1).stake(STAKE_AMOUNT)).to.be.reverted;
+      await expect(staking.connect(user1).stake(STAKE_AMOUNT, 0)).to.be.reverted;
     });
   });
 
   describe('Unstaking', function () {
     beforeEach(async function () {
       await lxon.connect(user1).approve(await staking.getAddress(), STAKE_AMOUNT);
-      await staking.connect(user1).stake(STAKE_AMOUNT);
+      await staking.connect(user1).stake(STAKE_AMOUNT, 0);
     });
 
     it('Should allow unstaking after lock period', async function () {
@@ -93,7 +93,7 @@ describe('SynexStaking', function () {
   describe('Rewards', function () {
     beforeEach(async function () {
       await lxon.connect(user1).approve(await staking.getAddress(), STAKE_AMOUNT);
-      await staking.connect(user1).stake(STAKE_AMOUNT);
+      await staking.connect(user1).stake(STAKE_AMOUNT, 0);
       
       // Fund reward pool
       await lxon.connect(owner).transfer(await staking.getAddress(), REWARD_AMOUNT);

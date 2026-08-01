@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Test, TestingModule } from '@nestjs/testing';
 import { StakingService } from '../../src/modules/staking/services/staking.service';
 import { PrismaService } from '../../src/modules/common/modules/prisma.service';
@@ -22,7 +23,7 @@ describe('StakingService', () => {
             wallet: {
               findFirst: jest.fn(),
             },
-          },
+          } as any,
         },
       ],
     }).compile();

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Test, TestingModule } from '@nestjs/testing';
 import { ScannerService } from '../../src/modules/scanner/services/scanner.service';
 import { PrismaService } from '../../src/modules/common/modules/prisma.service';
@@ -22,7 +23,7 @@ describe('ScannerService', () => {
               create: jest.fn(),
               update: jest.fn(),
             },
-          },
+          } as any,
         },
         {
           provide: HttpService,

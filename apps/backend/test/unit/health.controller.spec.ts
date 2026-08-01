@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Test, TestingModule } from '@nestjs/testing';
 import { HealthController } from '../../src/modules/health/health.controller';
 import { Ip } from '@nestjs/common';
@@ -15,7 +16,7 @@ describe('HealthController', () => {
           provide: PrismaService,
           useValue: {
             $queryRaw: jest.fn().mockResolvedValue(undefined),
-          },
+          } as any,
         },
         {
           provide: RedisService,

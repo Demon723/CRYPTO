@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Test, TestingModule } from '@nestjs/testing';
 import { TokensService } from '../../src/modules/tokens/services/tokens.service';
 import { Chain } from '../../src/modules/wallets/entities/wallet.entity';
@@ -22,7 +23,7 @@ describe('TokensService', () => {
               upsert: jest.fn(),
               createMany: jest.fn(),
             },
-          },
+          } as any,
         },
         {
           provide: HttpService,

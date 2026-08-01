@@ -6,12 +6,13 @@ import { AuthModule } from '../auth/auth.module';
 import { WalletsModule } from '../wallets/wallets.module';
 import { TransactionsService } from './services/transactions.service';
 import { TransactionExecutorService } from './services/transaction-executor.service';
+import { MEVResistantExecutorService } from './services/mev-resistant-executor.service';
 import { TransactionsController } from './controllers/transactions.controller';
 
 @Module({
   imports: [PrismaModule, HttpModule, LoggerModule, AuthModule, WalletsModule],
   controllers: [TransactionsController],
-  providers: [TransactionsService, TransactionExecutorService],
-  exports: [TransactionsService],
+  providers: [TransactionsService, TransactionExecutorService, MEVResistantExecutorService],
+  exports: [TransactionsService, MEVResistantExecutorService],
 })
 export class TransactionsModule {}

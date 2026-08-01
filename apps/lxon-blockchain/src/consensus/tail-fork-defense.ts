@@ -17,29 +17,27 @@ export class TailForkDefense {
     recoveredTip: ViewTip;
     timestamp: number;
   }> = [];
+  private leaderHistory: Map<number, string> = new Map();
+  private viewTimestamps: Map<number, number> = new Map();
 
   constructor(engine: MonadBFTEngine) {
     this.engine = engine;
   }
 
-  /**
-   * Record a validator's local tip when a view times out.
-   * The local tip is the highest view proposal the validator has voted for.
-   */
   recordLocalTip(validatorId: string, tip: ViewTip): void {
     this.localTips.set(validatorId, tip);
   }
 
-  /**
-   * When a view fails, each validator includes its local tip in its
-   * signed timeout message. The recovery leader aggregates these.
-   */
+  recordLeader(view: number, leaderId: string): void {
+    this.leaderHistory.set(view, leaderId);
+    this.viewTimestamps.set(view, Date.now());
+  }
+
   aggregateTimeoutMessages(messages: TimeoutMessage[]): ViewTip | null {
     if (messages.length === 0) {
       return null;
     }
 
-    // Sort by view number descending to find the highest tip
     const sorted = [...messages].sort(
       (a, b) => b.localTip.viewNumber - a.localTip.viewNumber,
     );
@@ -47,21 +45,13 @@ export class TailForkDefense {
     return sorted[0].localTip;
   }
 
-  /**
-   * Verify that a new proposal is not a tail-fork attack.
-   * A tail-fork occurs when a malicious leader proposes a different block
-   * at the same height as a previously proposed valid block.
-   */
   detectTailFork(
     newBlockHash: string,
     newView: number,
     previousBlockHash: string,
     previousView: number,
   ): { isTailFork: boolean; action: string } {
-    // If a block was already proposed at a lower view with the same height,
-    // and the new leader tries to propose a different block, that's tail-forking
     if (previousView < newView && previousBlockHash !== newBlockHash) {
-      // Check if the previous block had a valid QC
       const prevQC = this.engine.quorumCertificates.get(previousBlockHash);
       if (prevQC && prevQC.signers.length > 0) {
         return {
@@ -74,9 +64,38 @@ export class TailForkDefense {
     return { isTailFork: false, action: 'OK: No tail-fork detected' };
   }
 
-  /**
-   * Get the recovery leader's recovery proposal using the high-tip protocol.
-   */
+  detectLeaderEquivocation(view: number, leaderId: string, proposedHash: string): { isEquivocation: boolean; action: string } {
+    const prevLeader = this.leaderHistory.get(view);
+    if (prevLeader && prevLeader !== leaderId) {
+      return {
+        isEquivocation: true,
+        action: `REJECT: Leader equivocation detected. View ${view} already had leader ${prevLeader}, got ${leaderId}`,
+      };
+    }
+
+    this.leaderHistory.set(view, leaderId);
+    this.viewTimestamps.set(view, Date.now());
+
+    return { isEquivocation: false, action: 'OK: Leader verified' };
+  }
+
+  detectSlowLeader(view: number, leaderId: string, timeoutMs: number = 5000): { isSlow: boolean; action: string } {
+    const prevTimestamp = this.viewTimestamps.get(view - 1);
+    if (prevTimestamp === undefined) {
+      return { isSlow: false, action: 'OK: No previous view to compare' };
+    }
+
+    const elapsed = Date.now() - prevTimestamp;
+    if (elapsed > timeoutMs) {
+      return {
+        isSlow: true,
+        action: `WARNING: Leader ${leaderId} took ${elapsed}ms for view ${view}, exceeding ${timeoutMs}ms threshold`,
+      };
+    }
+
+    return { isSlow: false, action: 'OK: Leader timing within bounds' };
+  }
+
   getRecoveryProposal(failedView: number): {
     highTip: ViewTip | null;
     recoveryProposal: any;
@@ -91,7 +110,7 @@ export class TailForkDefense {
 
     this.viewRecoveryLog.push({
       view: failedView,
-      failedLeader: 'unknown',
+      failedLeader: this.leaderHistory.get(failedView) || 'unknown',
       recoveredTip: highTip,
       timestamp: Date.now(),
     });
@@ -99,10 +118,19 @@ export class TailForkDefense {
     return { highTip, recoveryProposal };
   }
 
-  /**
-   * Get the view recovery log for audit purposes.
-   */
   getRecoveryLog() {
     return [...this.viewRecoveryLog];
+  }
+
+  getLeaderHistory(): Map<number, string> {
+    return new Map(this.leaderHistory);
+  }
+
+  isViewValid(view: number): boolean {
+    const timestamp = this.viewTimestamps.get(view);
+    if (timestamp === undefined) return true;
+
+    const elapsed = Date.now() - timestamp;
+    return elapsed < 30000;
   }
 }

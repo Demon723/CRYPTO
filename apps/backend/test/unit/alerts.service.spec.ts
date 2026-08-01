@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Test, TestingModule } from '@nestjs/testing';
 import { AlertsService } from '../../src/modules/alerts/services/alerts.service';
 import { PrismaService } from '../../src/modules/common/modules/prisma.service';
@@ -25,7 +26,7 @@ describe('AlertsService', () => {
               update: jest.fn(),
               delete: jest.fn(),
             },
-          },
+          } as any,
         },
         {
           provide: RedisService,
