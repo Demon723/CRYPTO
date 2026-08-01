@@ -6,15 +6,19 @@ dotenv.config();
 
 const config: HardhatUserConfig = {
   solidity: {
-    evmVersion: 'cancun',
-    version: '0.8.26',
-    settings: {
-      optimizer: {
-        enabled: true,
-        runs: 200,
+    compilers: [
+      {
+        version: '0.8.26',
+        settings: {
+          evmVersion: 'cancun',
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+          viaIR: true,
+        },
       },
-      viaIR: true,
-    },
+    ],
   },
   networks: {
     hardhat: {
