@@ -126,10 +126,14 @@ async function bootstrap() {
   const server = app.getHttpAdapter().getInstance();
 
   if (environment !== 'production') {
-    const { IoAdapter } = await import('@nestjs/platform-socket.io');
-    const ioAdapter = new RedisIoAdapter();
-    app.useWebSocketAdapter(ioAdapter);
-    logger.log('WebSocket adapter initialized with Redis');
+    try {
+      const { IoAdapter } = await import('@nestjs/platform-socket.io');
+      const ioAdapter = new RedisIoAdapter();
+      app.useWebSocketAdapter(ioAdapter);
+      logger.log('WebSocket adapter initialized with Redis');
+    } catch (error) {
+      logger.warn('WebSocket adapter failed to initialize, continuing without Redis', error);
+    }
   }
 
   await app.listen(port);

@@ -52,6 +52,12 @@ import { configValidationSchema } from './modules/common/config.schema';
         port: parseInt(process.env.REDIS_PORT || '6379', 10),
         password: process.env.REDIS_PASSWORD || undefined,
       },
+      defaultJobOptions: {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 1000 },
+        removeOnComplete: { count: 100, age: 24 * 3600 },
+        removeOnFail: { count: 50, age: 7 * 24 * 3600 },
+      },
     }),
 
     PrismaModule,

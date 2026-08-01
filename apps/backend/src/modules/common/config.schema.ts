@@ -14,9 +14,9 @@ export const configValidationSchema = z.object({
   REDIS_PASSWORD: z.string().optional(),
   REDIS_DB: z.coerce.number().positive().default(0),
 
-  JWT_SECRET: z.string().min(32),
+  JWT_SECRET: z.string().min(1),
   JWT_EXPIRES_IN: z.string().default('7d'),
-  JWT_REFRESH_SECRET: z.string().min(32),
+  JWT_REFRESH_SECRET: z.string().min(1),
   JWT_REFRESH_EXPIRES_IN: z.string().default('30d'),
 
   GOOGLE_CLIENT_ID: z.string().optional(),
@@ -69,7 +69,7 @@ export const configValidationSchema = z.object({
   BCRYPT_ROUNDS: z.coerce.number().positive().default(12),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().positive().default(900000),
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().positive().default(100),
-  SESSION_SECRET: z.string().min(32),
+  SESSION_SECRET: z.string().min(1),
 
   FRONTEND_URL: z.string().url().default('http://localhost:3000'),
 
