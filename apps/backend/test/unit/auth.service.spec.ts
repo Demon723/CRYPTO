@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { AuthService } from '../../src/modules/auth/services/auth.service';
 import { PrismaService } from '../../src/modules/common/modules/prisma.service';
 import { ConfigService } from '@nestjs/config';
+import { CryptoService } from '../../src/modules/common/modules/crypto/crypto.service';
 
 jest.mock('bcrypt', () => ({
   hash: jest.fn().mockResolvedValue('$2b$12$mockedHashValueForTesting'),
@@ -15,6 +16,7 @@ describe('AuthService', () => {
   let prismaService: PrismaService;
   let jwtService: JwtService;
   let configService: ConfigService;
+  let cryptoService: CryptoService;
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -34,6 +36,7 @@ describe('AuthService', () => {
           provide: JwtService,
           useValue: {
             signAsync: jest.fn(),
+            sign: jest.fn(),
             verify: jest.fn(),
           },
         },
@@ -43,6 +46,21 @@ describe('AuthService', () => {
             get: jest.fn().mockReturnValue('test-secret'),
           },
         },
+        {
+          provide: CryptoService,
+          useValue: {
+            encryptObject: jest.fn().mockReturnValue({
+              ciphertext: 'mock-encrypted',
+              iv: 'mock-iv',
+              authTag: 'mock-tag',
+            }),
+            decryptObject: jest.fn().mockReturnValue({
+              email: 'test@example.com',
+              wallets: [],
+              portfolio: {},
+            }),
+          } as any,
+        },
       ],
     }).compile();
 
@@ -50,6 +68,7 @@ describe('AuthService', () => {
     prismaService = moduleRef.get<PrismaService>(PrismaService);
     jwtService = moduleRef.get<JwtService>(JwtService);
     configService = moduleRef.get<ConfigService>(ConfigService);
+    cryptoService = moduleRef.get<CryptoService>(CryptoService);
   });
 
   it('should be defined', () => {
@@ -76,5 +95,32 @@ describe('AuthService', () => {
 
     const result = await service.validateUserByEmail('test@example.com', 'wrongpassword');
     expect(result).toBeNull();
+  });
+
+  it('should register a new user with encrypted data', async () => {
+    const mockUser = {
+      id: '1',
+      email: 'test@example.com',
+      password: '$2b$12$mockedHashValueForTesting',
+      isActive: true,
+      role: 'USER',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(null);
+    jest.spyOn(prismaService.user, 'create').mockResolvedValue(mockUser as any);
+    jest.spyOn(jwtService, 'signAsync').mockResolvedValue('mock-access-token');
+    jest.spyOn(jwtService, 'sign').mockResolvedValue('mock-refresh-token');
+
+    const result = await service.register({
+      email: 'test@example.com',
+      password: 'SecurePass123!',
+      name: 'Test User',
+    });
+
+    expect(result).toBeDefined();
+    expect(result.user.email).toBe('test@example.com');
+    expect(cryptoService.encryptObject).toHaveBeenCalled();
   });
 });

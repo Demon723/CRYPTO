@@ -13,6 +13,7 @@ import { AuthController } from './controllers/auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { TransactionAuthService } from '../common/services/transaction-auth.service';
 
 @Module({
   imports: [
@@ -34,7 +35,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, TokenService, JwtStrategy, GoogleStrategy, JwtAuthGuard],
-  exports: [AuthService, TokenService, JwtAuthGuard],
+  providers: [AuthService, TokenService, JwtStrategy, GoogleStrategy, JwtAuthGuard, TransactionAuthService],
+  exports: [AuthService, TokenService, JwtAuthGuard, TransactionAuthService],
 })
 export class AuthModule {}

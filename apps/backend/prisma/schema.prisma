@@ -9,20 +9,27 @@ datasource db {
 }
 
 model User {
-  id                 String    @id @default(uuid())
-  email              String    @unique
-  emailVerified      Boolean   @default(false)
-  emailVerifiedAt    DateTime?
-  name               String?
-  image              String?
-  password           String?
-  role               String    @default("USER")
-  isActive           Boolean   @default(true)
-  isTwoFactorEnabled Boolean   @default(false)
-  twoFactorSecret    String?
-  lastLoginAt        DateTime?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  id                      String    @id @default(uuid())
+  email                   String    @unique
+  emailVerified           Boolean   @default(false)
+  emailVerifiedAt         DateTime?
+  name                    String?
+  image                   String?
+  password                String?
+  role                    String    @default("USER")
+  isActive                Boolean   @default(true)
+  isTwoFactorEnabled      Boolean   @default(false)
+  twoFactorSecret         String?
+  encryptedData           String?
+  dataIv                  String?
+  dataAuthTag             String?
+  pinHash                 String?
+  biometricEnabled        Boolean   @default(false)
+  biometricPublicKey      String?
+  isPinBiometricRequired  Boolean   @default(false)
+  lastLoginAt             DateTime?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 
   wallets          Wallet[]
   transactions     Transaction[]
@@ -43,6 +50,7 @@ model User {
   auditLogs        AuditLog[]
   systemLogs       SystemLog[]
   deployments      Deployment[]
+  orders           Order[]
 
   @@index([email])
   @@index([createdAt])
@@ -73,6 +81,7 @@ model Wallet {
   transactions     Transaction[]
   alerts           Alert[]
   stakingPositions StakingPosition[]
+  orders           Order[]
 
   @@unique([userId, address, chain])
   @@index([userId])
@@ -544,7 +553,66 @@ model Deployment {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([status])
   @@index([chain])
   @@map("deployments")
+}
+
+model Order {
+  id              String    @id @default(uuid())
+  userId          String
+  walletId        String?
+  chain           String
+  side            String
+  type            String
+  price           Float
+  amount          Float
+  filledAmount    Float     @default(0)
+  remainingAmount Float
+  status          String    @default("PENDING")
+  commitHash      String?
+  revealed        Boolean   @default(false)
+  mevProtected    Boolean   @default(true)
+  batchId         String?
+  metadata        String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wallet Wallet? @relation(fields: [walletId], references: [id], onDelete: SetNull)
+  buyMatches  OrderMatch[] @relation("BuyOrderMatches")
+  sellMatches OrderMatch[] @relation("SellOrderMatches")
+
+  @@index([userId])
+  @@index([walletId])
+  @@index([chain])
+  @@index([status])
+  @@index([side])
+  @@index([createdAt])
+  @@index([batchId])
+  @@map("orders")
+}
+
+model OrderMatch {
+  id              String    @id @default(uuid())
+  buyOrderId      String
+  sellOrderId     String
+  chain           String
+  price           Float
+  amount          Float
+  fee             Float     @default(0)
+  status          String    @default("PENDING")
+  executedAt      DateTime?
+  batchId         String
+  metadata        String?
+  createdAt       DateTime  @default(now())
+
+  buyOrder  Order @relation("BuyOrderMatches", fields: [buyOrderId], references: [id], onDelete: Cascade)
+  sellOrder Order @relation("SellOrderMatches", fields: [sellOrderId], references: [id], onDelete: Cascade)
+
+  @@index([buyOrderId])
+  @@index([sellOrderId])
+  @@index([chain])
+  @@index([batchId])
+  @@index([createdAt])
+  @@map("order_matches")
 }

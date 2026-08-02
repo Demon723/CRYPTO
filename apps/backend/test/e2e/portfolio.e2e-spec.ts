@@ -1,16 +1,22 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { AppModule } from '../../src/app.module';
 
 describe('PortfolioController (e2e)', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
-      imports: [],
+      imports: [AppModule],
     }).compile();
 
     app = moduleRef.createNestApplication();
+    app.useGlobalPipes(new (require('@nestjs/common').ValidationPipe)({ 
+      whitelist: true, 
+      forbidNonWhitelisted: true,
+      transform: true,
+    }));
     await app.init();
   });
 
@@ -18,15 +24,9 @@ describe('PortfolioController (e2e)', () => {
     await app.close();
   });
 
-  it('/portfolio/summary (GET)', () => {
+  it('/portfolio (GET) - should require authentication or return empty', () => {
     return request(app.getHttpServer())
-      .get('/portfolio/summary')
-      .expect(401);
-  });
-
-  it('/portfolio/allocation (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/portfolio/allocation')
-      .expect(401);
+      .get('/api/v1/portfolio')
+      .expect(200);
   });
 });

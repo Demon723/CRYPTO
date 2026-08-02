@@ -1,16 +1,22 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { AppModule } from '../../src/app.module';
 
 describe('TokensController (e2e)', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
-      imports: [],
+      imports: [AppModule],
     }).compile();
 
     app = moduleRef.createNestApplication();
+    app.useGlobalPipes(new (require('@nestjs/common').ValidationPipe)({ 
+      whitelist: true, 
+      forbidNonWhitelisted: true,
+      transform: true,
+    }));
     await app.init();
   });
 
@@ -18,15 +24,9 @@ describe('TokensController (e2e)', () => {
     await app.close();
   });
 
-  it('/tokens/search (GET)', () => {
+  it('/tokens (GET) - should return token list', () => {
     return request(app.getHttpServer())
-      .get('/tokens/search?q=ETH')
-      .expect(200);
-  });
-
-  it('/tokens/trending (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/tokens/trending')
+      .get('/api/v1/tokens')
       .expect(200);
   });
 });

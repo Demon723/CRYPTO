@@ -29,7 +29,22 @@ describe('TokensService', () => {
           provide: HttpService,
           useValue: {
             getAxiosInstance: jest.fn().mockReturnValue({
-              get: jest.fn(),
+              get: jest.fn().mockResolvedValue({
+                data: {
+                  pairs: [{
+                    baseToken: {
+                      address: '0x123',
+                      symbol: 'ETH',
+                      name: 'Ethereum',
+                    },
+                    chainId: 1,
+                    priceUsd: '2500',
+                    priceChange: { h24: 2.5 },
+                    marketCap: { toString: () => '300000000000' },
+                    volume: { h24: { toString: () => '10000000000' } },
+                  }],
+                },
+              }),
             }),
           },
         },

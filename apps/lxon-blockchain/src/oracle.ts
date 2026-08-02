@@ -20,6 +20,15 @@ export interface ConsensusPrice {
   spread: number;
   sources: number;
   timestamp: number;
+  confidence: number;
+  staleness: number;
+}
+
+export interface PriceDeviation {
+  symbol: string;
+  deviation: number;
+  threshold: number;
+  isAnomalous: boolean;
 }
 
 export class NativeOracle {
@@ -27,19 +36,26 @@ export class NativeOracle {
   private validators: Set<string> = new Set();
   private minValidators: number = 3;
   private updateThreshold: number = 0.05;
+  private maxStalenessMs: number = 300000;
+  private priceHistory: Map<string, OraclePrice[]> = new Map();
+  private maxHistoryLength: number = 1000;
+  private reputationScores: Map<string, number> = new Map();
 
   constructor(validatorAddresses: string[] = []) {
     for (const addr of validatorAddresses) {
       this.validators.add(addr);
+      this.reputationScores.set(addr, 1.0);
     }
   }
 
   addValidator(address: string): void {
     this.validators.add(address);
+    this.reputationScores.set(address, 1.0);
   }
 
   removeValidator(address: string): void {
     this.validators.delete(address);
+    this.reputationScores.delete(address);
   }
 
   submitPriceUpdate(update: OracleUpdate, validatorId: string): { accepted: boolean; reason: string } {
@@ -69,12 +85,14 @@ export class NativeOracle {
       }
     }
 
+    const confidence = this._computeConfidence(existingPrices, update.price, validatorId);
+
     const oraclePrice: OraclePrice = {
       symbol: update.symbol,
       price: update.price,
       timestamp: Date.now(),
       source: update.source,
-      confidence: this._computeConfidence(existingPrices, update.price),
+      confidence,
     };
 
     if (!this.priceFeeds.has(update.symbol)) {
@@ -83,10 +101,13 @@ export class NativeOracle {
 
     this.priceFeeds.get(update.symbol)!.push(oraclePrice);
 
-    const maxPrices = 100;
+    const history = this.priceHistory.get(update.symbol) || [];
+    history.push(oraclePrice);
+    this.priceHistory.set(update.symbol, history.slice(-this.maxHistoryLength));
+
     const prices = this.priceFeeds.get(update.symbol)!;
-    if (prices.length > maxPrices) {
-      this.priceFeeds.set(update.symbol, prices.slice(-maxPrices));
+    if (prices.length > this.maxHistoryLength) {
+      this.priceFeeds.set(update.symbol, prices.slice(-this.maxHistoryLength));
     }
 
     return { accepted: true, reason: 'Price update accepted' };
@@ -110,6 +131,9 @@ export class NativeOracle {
       ? recentPrices.reduce((sum, p) => sum + p.confidence, 0) / recentPrices.length
       : 0;
 
+    const latestTimestamp = prices[prices.length - 1].timestamp;
+    const staleness = Date.now() - latestTimestamp;
+
     return {
       symbol,
       price: medianPrice,
@@ -117,7 +141,21 @@ export class NativeOracle {
       spread,
       sources: recentPrices.length,
       timestamp: Date.now(),
+      confidence: avgConfidence,
+      staleness,
     };
+  }
+
+  getTWAP(symbol: string, windowMs: number = 3600000): number | null {
+    const history = this.priceHistory.get(symbol);
+    if (!history || history.length === 0) return null;
+
+    const cutoff = Date.now() - windowMs;
+    const windowPrices = history.filter(p => p.timestamp >= cutoff);
+    if (windowPrices.length === 0) return null;
+
+    const sum = windowPrices.reduce((acc, p) => acc + p.price, 0);
+    return sum / windowPrices.length;
   }
 
   getLatestPrice(symbol: string): OraclePrice | null {
@@ -133,7 +171,51 @@ export class NativeOracle {
     return prices.slice(-limit);
   }
 
-  private _computeConfidence(existingPrices: OraclePrice[], newPrice: number): number {
+  detectDeviation(symbol: string): PriceDeviation | null {
+    const consensus = this.getConsensusPrice(symbol);
+    if (!consensus) return null;
+
+    const history = this.priceHistory.get(symbol) || [];
+    if (history.length < 2) return null;
+
+    const latest = history[history.length - 1];
+    const previous = history[history.length - 2];
+    const deviation = Math.abs(latest.price - previous.price) / previous.price;
+
+    return {
+      symbol,
+      deviation,
+      threshold: this.updateThreshold,
+      isAnomalous: deviation > this.updateThreshold,
+    };
+  }
+
+  getValidatorCount(): number {
+    return this.validators.size;
+  }
+
+  isValidator(address: string): boolean {
+    return this.validators.has(address);
+  }
+
+  updateReputation(validatorId: string, score: number): void {
+    if (this.reputationScores.has(validatorId)) {
+      const current = this.reputationScores.get(validatorId)!;
+      this.reputationScores.set(validatorId, current * 0.9 + score * 0.1);
+    }
+  }
+
+  getReputation(validatorId: string): number {
+    return this.reputationScores.get(validatorId) || 0;
+  }
+
+  isStale(symbol: string): boolean {
+    const latest = this.getLatestPrice(symbol);
+    if (!latest) return true;
+    return Date.now() - latest.timestamp > this.maxStalenessMs;
+  }
+
+  private _computeConfidence(existingPrices: OraclePrice[], newPrice: number, validatorId: string): number {
     if (existingPrices.length === 0) {
       return 0.5;
     }
@@ -144,16 +226,9 @@ export class NativeOracle {
     const stdDev = Math.sqrt(variance);
 
     const deviation = Math.abs(newPrice - avgPrice);
-    const confidence = Math.max(0, Math.min(1, 1 - (deviation / (stdDev + 0.001))));
+    const statisticalConfidence = Math.max(0, Math.min(1, 1 - (deviation / (stdDev + 0.001))));
 
-    return confidence;
-  }
-
-  getValidatorCount(): number {
-    return this.validators.size;
-  }
-
-  isValidator(address: string): boolean {
-    return this.validators.has(address);
+    const reputation = this.reputationScores.get(validatorId) || 0.5;
+    return statisticalConfidence * 0.7 + reputation * 0.3;
   }
 }

@@ -209,7 +209,15 @@ export class ScannerService {
           },
         });
 
-      const result = response.data.result[0];
+      if (!response || !response.data) {
+        throw new Error('Empty response from block explorer');
+      }
+
+      const result = response.data.result?.[0];
+
+      if (!result) {
+        throw new Error('No contract data in response');
+      }
 
       return {
         contractName: result?.ContractName || 'Unknown',

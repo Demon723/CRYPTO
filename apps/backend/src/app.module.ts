@@ -9,7 +9,8 @@ import { PrismaModule } from './modules/common/modules/prisma.module';
 import { LoggerModule } from './modules/common/modules/logger.module';
 import { HttpModule } from './modules/common/modules/http.module';
 
-import { AuthModule } from './modules/auth/auth.module';
+import { AuthModule } from "./modules/auth/auth.module";
+import { CryptoModule } from "./modules/common/modules/crypto/crypto.module";
 import { UsersModule } from './modules/users/users.module';
 import { WalletsModule } from './modules/wallets/wallets.module';
 import { PortfolioModule } from './modules/portfolio/portfolio.module';
@@ -66,6 +67,7 @@ import { configValidationSchema } from './modules/common/config.schema';
     HttpModule,
 
     AuthModule,
+    CryptoModule,
     UsersModule,
     WalletsModule,
     PortfolioModule,

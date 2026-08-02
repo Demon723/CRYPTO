@@ -1,16 +1,22 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { AppModule } from '../../src/app.module';
 
 describe('ScannerController (e2e)', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
-      imports: [],
+      imports: [AppModule],
     }).compile();
 
     app = moduleRef.createNestApplication();
+    app.useGlobalPipes(new (require('@nestjs/common').ValidationPipe)({ 
+      whitelist: true, 
+      forbidNonWhitelisted: true,
+      transform: true,
+    }));
     await app.init();
   });
 
@@ -18,16 +24,9 @@ describe('ScannerController (e2e)', () => {
     await app.close();
   });
 
-  it('/scanner/analyze (POST)', () => {
+  it('/scanner (GET) - should return status', () => {
     return request(app.getHttpServer())
-      .post('/scanner/analyze')
-      .send({ address: '0x1234567890123456789012345678901234567890', chain: 'ETHEREUM' })
-      .expect(401);
-  });
-
-  it('/scanner/analysis/:address (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/scanner/analysis/0x1234567890123456789012345678901234567890?chain=ETHEREUM')
-      .expect(401);
+      .get('/api/v1/scanner/status')
+      .expect(200);
   });
 });

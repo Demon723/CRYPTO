@@ -10,7 +10,8 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../common/modules/prisma.service';
-import { AuthResponse, UserEntity, JwtPayload } from '../entities/user.entity';
+import { CryptoService } from '../../common/modules/crypto/crypto.service';
+import { AuthResponse, UserEntity, JwtPayload, SensitiveUserData } from '../entities/user.entity';
 import { UserRole } from '../../../common/enums';
 import { LoggerService } from '../../common/modules/logger.service';
 
@@ -23,6 +24,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly cryptoService: CryptoService,
   ) {
     this.bcryptRounds = this.configService.get<number>('BCRYPT_ROUNDS', 12);
   }
@@ -105,11 +107,26 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(data.password, this.bcryptRounds);
 
+    const sensitiveData: SensitiveUserData = {
+      email: data.email,
+      name: data.name,
+      password: hashedPassword,
+      wallets: [],
+      portfolio: {},
+      transactions: [],
+      preferences: {},
+    };
+
+    const encrypted = this.cryptoService.encryptObject(sensitiveData);
+
     const user = await this.prisma.user.create({
       data: {
         email: data.email,
         password: hashedPassword,
         name: data.name,
+        encryptedData: encrypted.ciphertext,
+        dataIv: encrypted.iv,
+        dataAuthTag: encrypted.authTag,
       },
     });
 
@@ -192,6 +209,32 @@ export class AuthService {
     return this.mapToEntity(user);
   }
 
+  // Owner-only: decrypt and return full user data
+  async getDecryptedUserData(userId: string): Promise<{ user: UserEntity; sensitiveData: SensitiveUserData }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new InternalServerErrorException('User not found');
+    }
+
+    if (!user.encryptedData || !user.dataIv || !user.dataAuthTag) {
+      throw new InternalServerErrorException('User data is not encrypted');
+    }
+
+    const sensitiveData = this.cryptoService.decryptObject({
+      ciphertext: user.encryptedData,
+      iv: user.dataIv,
+      authTag: user.dataAuthTag,
+    });
+
+    return {
+      user: this.mapToEntity(user),
+      sensitiveData: sensitiveData as any,
+    };
+  }
+
   private async generateTokens(user: UserEntity): Promise<{ accessToken: string; refreshToken: string }> {
     const payload: JwtPayload = {
       sub: user.id,
@@ -242,6 +285,9 @@ export class AuthService {
     lastLoginAt?: Date;
     createdAt: Date;
     updatedAt: Date;
+    encryptedData?: string;
+    dataIv?: string;
+    dataAuthTag?: string;
   }): UserEntity {
     return {
       id: user.id,
@@ -258,6 +304,9 @@ export class AuthService {
       lastLoginAt: user.lastLoginAt,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      encryptedData: user.encryptedData,
+      dataIv: user.dataIv,
+      dataAuthTag: user.dataAuthTag,
     };
   }
 
@@ -274,8 +323,11 @@ export class AuthService {
     lastLoginAt?: Date;
     createdAt: Date;
     updatedAt: Date;
-  }): Omit<UserEntity, 'password' | 'twoFactorSecret'> {
-    const { password, twoFactorSecret, ...sanitized } = this.mapToEntity(user);
+    encryptedData?: string;
+    dataIv?: string;
+    dataAuthTag?: string;
+  }): Omit<UserEntity, 'password' | 'twoFactorSecret' | 'encryptedData' | 'dataIv' | 'dataAuthTag'> {
+    const { password, twoFactorSecret, encryptedData, dataIv, dataAuthTag, ...sanitized } = this.mapToEntity(user);
     return sanitized;
   }
 }

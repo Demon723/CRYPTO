@@ -195,6 +195,10 @@ export class TokensService {
           params: { q: query },
         });
 
+      if (!response || !response.data) {
+        throw new Error('Empty response from DEX Screener');
+      }
+
       const pairs = response.data.pairs || [];
       const tokens: TokenSearchResult[] = [];
 
@@ -229,6 +233,10 @@ export class TokensService {
         .get(`${this.dexScreenerApi}/search`, {
           params: { q: address },
         });
+
+      if (!response || !response.data) {
+        return null;
+      }
 
       const pair = response.data.pairs?.[0];
       if (!pair) return null;

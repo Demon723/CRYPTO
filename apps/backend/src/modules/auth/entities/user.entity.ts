@@ -2,6 +2,22 @@ import { UserRole } from '../../../common/enums';
 
 export type UserRoleType = UserRole;
 
+export interface SensitiveUserData {
+  email: string;
+  name?: string;
+  image?: string;
+  password?: string;
+  twoFactorSecret?: string;
+  wallets?: Array<{
+    address: string;
+    chain: string;
+    balance?: string;
+  }>;
+  portfolio?: Record<string, any>;
+  transactions?: Array<Record<string, any>>;
+  preferences?: Record<string, any>;
+}
+
 export interface UserEntity {
   id: string;
   email: string;
@@ -17,6 +33,17 @@ export interface UserEntity {
   lastLoginAt?: Date;
   createdAt: Date;
   updatedAt: Date;
+  
+  // Encrypted storage
+  encryptedData?: string;
+  dataIv?: string;
+  dataAuthTag?: string;
+  
+  // PIN and biometric
+  pinHash?: string;
+  biometricEnabled?: boolean;
+  biometricPublicKey?: string;
+  isPinBiometricRequired?: boolean;
 }
 
 export interface JwtPayload {
@@ -29,5 +56,5 @@ export interface JwtPayload {
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
-  user: Omit<UserEntity, 'password' | 'twoFactorSecret'>;
+  user: Omit<UserEntity, 'password' | 'twoFactorSecret' | 'encryptedData' | 'dataIv' | 'dataAuthTag' | 'pinHash' | 'biometricPublicKey'>;
 }

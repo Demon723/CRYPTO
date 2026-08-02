@@ -29,14 +29,28 @@ describe('ScannerService', () => {
           provide: HttpService,
           useValue: {
             getAxiosInstance: jest.fn().mockReturnValue({
-              get: jest.fn(),
+              get: jest.fn().mockResolvedValue({
+                data: {
+                  result: [{
+                    ContractName: 'TestContract',
+                    CompilerVersion: '0.8.20',
+                    OptimizationUsed: '1',
+                    SourceCode: 'pragma solidity ^0.8.0; contract TestContract {}',
+                    ABI: '[{"type":"function"}]',
+                  }],
+                },
+              }),
             }),
           },
         },
         {
           provide: AiService,
           useValue: {
-            detectScam: jest.fn(),
+            detectScam: jest.fn().mockResolvedValue({
+              isScam: false,
+              confidence: 0.95,
+              reasons: [],
+            }),
           },
         },
       ],
