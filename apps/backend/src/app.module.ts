@@ -32,6 +32,7 @@ import { WatchlistModule } from './modules/watchlist/watchlist.module';
 import { WebsocketModule } from './modules/websocket/websocket.module';
 import { DeveloperApiModule } from './modules/developer-api/developer-api.module';
 import { DeploymentsModule } from './modules/deployments/deployments.module';
+import { KycModule } from './modules/kyc/kyc.module';
 
 import { BullConfigService } from './modules/common/services/bull-config.service';
 import { configValidationSchema } from './modules/common/config.schema';
@@ -88,6 +89,8 @@ import { configValidationSchema } from './modules/common/config.schema';
     ReferralModule,
     WatchlistModule,
     WebsocketModule,
-    DeploymentsModule,  ],
+    DeploymentsModule,
+    KycModule,
+  ],
 })
 export class AppModule {}

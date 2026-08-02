@@ -31,6 +31,23 @@ model User {
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 
+  // KYC / Identity Verification
+  kycStatus               String    @default("NOT_SUBMITTED") // NOT_SUBMITTED, PENDING, VERIFIED, REJECTED
+  kycLegalName            String?
+  kycDateOfBirth          DateTime?
+  kycHomeAddress          String?
+  kycGovernmentIdType     String?   // PASSPORT, DRIVING_LICENSE, NATIONAL_ID
+  kycGovernmentIdNumber   String?
+  kycGovernmentIdFrontUrl String?
+  kycGovernmentIdBackUrl  String?
+  kycSelfieUrl            String?
+  kycProofOfAddressUrl    String?
+  kycPaymentMethodType    String?   // BANK_ACCOUNT, DEBIT_CARD, CREDIT_CARD, UPI
+  kycPaymentMethodLast4   String?
+  kycVerifiedAt           DateTime?
+  kycRejectionReason      String?
+  kycSubmissionCount      Int       @default(0)
+
   wallets          Wallet[]
   transactions     Transaction[]
   alerts           Alert[]
