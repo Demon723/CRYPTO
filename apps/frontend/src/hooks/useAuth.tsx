@@ -1,5 +1,6 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import apiClient from '@/lib/api-client';
 
 interface User {
   id: string;
@@ -37,47 +38,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
-    });
+    const response = await apiClient.post<{ accessToken: string; refreshToken: string; user: User }>('/auth/login', { email, password });
 
-    if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.message || 'Login failed');
-    }
-
-    const data = await response.json();
-    localStorage.setItem('accessToken', data.accessToken);
-    localStorage.setItem('refreshToken', data.refreshToken);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    setAccessToken(data.accessToken);
-    setUser(data.user);
+    const { accessToken, refreshToken, user } = response.data;
+    localStorage.setItem('accessToken', accessToken);
+    localStorage.setItem('refreshToken', refreshToken);
+    localStorage.setItem('user', JSON.stringify(user));
+    setAccessToken(accessToken);
+    setUser(user);
   };
 
   const register = async (name: string, email: string, password: string) => {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ name, email, password }),
-    });
+    const response = await apiClient.post<{ accessToken: string; refreshToken: string; user: User }>('/auth/register', { name, email, password });
 
-    if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.message || 'Registration failed');
-    }
-
-    const data = await response.json();
-    localStorage.setItem('accessToken', data.accessToken);
-    localStorage.setItem('refreshToken', data.refreshToken);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    setAccessToken(data.accessToken);
-    setUser(data.user);
+    const { accessToken, refreshToken, user } = response.data;
+    localStorage.setItem('accessToken', accessToken);
+    localStorage.setItem('refreshToken', refreshToken);
+    localStorage.setItem('user', JSON.stringify(user));
+    setAccessToken(accessToken);
+    setUser(user);
   };
 
   const logout = () => {
