@@ -1,7 +1,13 @@
-FROM node:20-alpine AS base
+FROM node:20-slim AS base
 
 FROM base AS deps
-RUN apk add --no-cache libc6-compat openssl
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl \
+    python3 \
+    make \
+    g++ \
+  && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
@@ -19,17 +25,16 @@ WORKDIR /app
 
 ENV NODE_ENV production
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nestjs
+RUN groupadd --system --gid 1001 nodejs && useradd --system --uid 1001 -g nodejs nestjs
 
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/node_modules ./node_modules
 
 USER nestjs
 
 EXPOSE 4000
 
 CMD ["node", "dist/main"]
-# deploy 1785538241

@@ -6,8 +6,8 @@ export const configValidationSchema = z.object({
   API_PREFIX: z.string().default('api/v1'),
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
 
-  DATABASE_URL: z.string().url(),
-  DIRECT_URL: z.string().url(),
+  DATABASE_URL: z.string().url().default('postgresql://postgres:postgres@localhost:5432/cryptomind?schema=public'),
+  DIRECT_URL: z.string().url().default('postgresql://postgres:postgres@localhost:5432/cryptomind?schema=public'),
 
   REDIS_HOST: z.string().default('localhost'),
   REDIS_PORT: z.coerce.number().positive().default(6379),

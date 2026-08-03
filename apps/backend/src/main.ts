@@ -123,7 +123,7 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs', app, document);
 
   const port = configService.get<number>('PORT', 4000);
-  const server = app.getHttpAdapter().getInstance();
+  const host = configService.get<string>('HOST', '0.0.0.0');
 
   if (environment !== 'production') {
     try {
@@ -136,7 +136,7 @@ async function bootstrap() {
     }
   }
 
-  await app.listen(port);
+  await app.listen(port, host);
   logger.log(`Application is running on: http://localhost:${port}`);
   logger.log(`API Documentation: http://localhost:${port}/api/docs`);
   logger.log(`Environment: ${environment}`);
