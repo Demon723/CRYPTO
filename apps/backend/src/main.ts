@@ -75,17 +75,18 @@ async function bootstrap() {
     message: { statusCode: 429, message: 'Too many requests, please try again later.' },
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req) => req.ip || 'anonymous',
+    keyGenerator: (req) => (req as any).ip || 'anonymous',
     skip: (req) => req.path === '/health' || req.path === '/api/docs',
   });
   app.use(limiter);
 
   // Security middleware — additional headers, content-type checks
-  app.use(SecurityMiddleware);
+  // SecurityMiddleware is a Nest middleware class. Instantiate and use its `use` method here.
+  app.use((req, res, next) => new SecurityMiddleware().use(req as any, res as any, next));
 
   // CSRF protection for session-based endpoints (exclude x402 and API endpoints that use wallet auth)
   if (environment === 'production') {
-    app.use(csurf({ cookie: { httpOnly: true, secure: true, sameSite: 'strict' } }));
+    app.use(csurf({ cookie: { httpOnly: true, secure: true, sameSite: 'strict' } } as any));
   }
 
   app.setGlobalPrefix(configService.get<string>('API_PREFIX', 'api/v1'), {
@@ -103,7 +104,8 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalFilters(ExceptionsFilter as any);
+  // Use ExceptionsFilter with DI-provided ConfigService instance
+  app.useGlobalFilters(new ExceptionsFilter(configService));
   app.useGlobalInterceptors(new LoggingInterceptor());
 
   const swaggerConfig = new DocumentBuilder()
@@ -122,7 +124,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = configService.get<number>('PORT', 4000);
+  const port = configService.get<number>('PORT', 4000) as unknown as number;
   const server = app.getHttpAdapter().getInstance();
 
   if (environment !== 'production') {
