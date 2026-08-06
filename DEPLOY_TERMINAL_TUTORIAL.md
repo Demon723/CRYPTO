@@ -70,10 +70,15 @@ Choose the option to create a new project and give it a name such as `synex`.
 
 ### 4.2 Add PostgreSQL and Redis
 
+Use the interactive Railway add flow for the services you want:
+
 ```bash
-railway add -p postgres
-railway add -p redis
+railway add
 ```
+
+Then choose the PostgreSQL and Redis services from the list when prompted.
+
+If your Railway CLI version does not show the service list, use the interactive menu and select the plugin/service entries manually.
 
 ### 4.3 Set backend environment variables
 
