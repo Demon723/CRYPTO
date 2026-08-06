@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 COPY apps/backend/package.json apps/backend/package-lock.json ./
-RUN npm install --omit=dev
+RUN npm install --omit=dev --legacy-peer-deps
 RUN npm install -g pnpm
 
 COPY apps/backend ./
