@@ -17,7 +17,7 @@ import { Chain } from '../../wallets/entities/wallet.entity';
 @Injectable()
 export class AiService {
   private readonly logger = new LoggerService();
-  private readonly chatModel: ChatOpenAI;
+  private readonly chatModel: ChatOpenAI | null;
 
   constructor(
     private readonly configService: ConfigService,
@@ -25,15 +25,24 @@ export class AiService {
     private readonly httpService: HttpService,
     private readonly conversationService: ConversationService,
   ) {
-    this.chatModel = new ChatOpenAI({
-      openAIApiKey: this.configService.get<string>('OPENAI_API_KEY'),
-      modelName: this.configService.get<string>('OPENAI_MODEL', 'gpt-4-turbo-preview'),
-      temperature: 0.7,
-      streaming: true,
-    });
+    const openAIApiKey = this.configService.get<string>('OPENAI_API_KEY');
+    if (openAIApiKey) {
+      this.chatModel = new ChatOpenAI({
+        openAIApiKey,
+        modelName: this.configService.get<string>('OPENAI_MODEL', 'gpt-4-turbo-preview'),
+        temperature: 0.7,
+        streaming: true,
+      });
+    } else {
+      this.chatModel = null;
+    }
   }
 
   async chat(userId: string, message: string, chatId?: string, context?: Record<string, unknown>) {
+    if (!this.chatModel) {
+      throw new BadRequestException('AI service is not configured. Please set OPENAI_API_KEY environment variable.');
+    }
+
     const conversation = await this.conversationService.getOrCreateConversation(userId, chatId);
 
     const systemPrompt = this.buildSystemPrompt(context);
@@ -69,6 +78,10 @@ export class AiService {
     onToken?: (token: string) => void,
     context?: Record<string, unknown>,
   ) {
+    if (!this.chatModel) {
+      throw new BadRequestException('AI service is not configured. Please set OPENAI_API_KEY environment variable.');
+    }
+
     const conversation = await this.conversationService.getOrCreateConversation(userId, chatId);
     const systemPrompt = this.buildSystemPrompt(context);
     const messages = await this.conversationService.getRecentMessages(conversation.id, 20);
@@ -108,6 +121,10 @@ export class AiService {
   }
 
   async analyzePortfolio(userId: string) {
+    if (!this.chatModel) {
+      throw new BadRequestException('AI service is not configured. Please set OPENAI_API_KEY environment variable.');
+    }
+
     const wallets = await this.prisma.wallet.findMany({
       where: { userId, isActive: true },
       include: {
@@ -160,6 +177,10 @@ Provide:
   }
 
   async explainTransaction(userId: string, transactionHash: string) {
+    if (!this.chatModel) {
+      throw new BadRequestException('AI service is not configured. Please set OPENAI_API_KEY environment variable.');
+    }
+
     const transaction = await this.prisma.transaction.findFirst({
       where: { userId, hash: transactionHash },
       include: { wallet: true },
@@ -190,6 +211,10 @@ Provide:
   }
 
   async detectScam(address: string, chain: Chain) {
+    if (!this.chatModel) {
+      throw new BadRequestException('AI service is not configured. Please set OPENAI_API_KEY environment variable.');
+    }
+
     const prompt = `Analyze this crypto address for potential scam indicators:
 Address: ${address}
 Chain: ${chain}
