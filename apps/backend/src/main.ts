@@ -12,7 +12,7 @@ import { RedisIoAdapter } from './modules/common/adapters/redis-io.adapter';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { LoggingInterceptor } from './modules/common/interceptors/logging.interceptor';
 import { ExceptionsFilter } from './modules/common/filters/exceptions.filter';
-import { SecurityMiddleware } from './modules/common/middleware/security.middleware';
+import { securityMiddleware } from './modules/common/middleware/security.middleware';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -86,7 +86,7 @@ async function bootstrap() {
   app.use(limiter);
 
   // Security middleware — additional headers, content-type checks
-  app.use(SecurityMiddleware);
+  app.use(securityMiddleware);
 
   // CSRF protection for session-based endpoints (exclude x402 and API endpoints that use wallet auth)
   if (environment === 'production') {

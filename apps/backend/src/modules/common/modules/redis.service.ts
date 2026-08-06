@@ -9,11 +9,19 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   private readonly subscriber: Redis;
 
   constructor(private readonly configService: ConfigService) {
+    const redisUrl = this.configService.get<string>('REDIS_URL');
+    
+    const redisConfig = redisUrl 
+      ? { url: redisUrl }
+      : {
+          host: this.configService.get<string>('REDIS_HOST', 'localhost'),
+          port: this.configService.get<number>('REDIS_PORT', 6379),
+          password: this.configService.get<string>('REDIS_PASSWORD') || undefined,
+          db: this.configService.get<number>('REDIS_DB', 0),
+        };
+
     this.client = new Redis({
-      host: this.configService.get<string>('REDIS_HOST', 'localhost'),
-      port: this.configService.get<number>('REDIS_PORT', 6379),
-      password: this.configService.get<string>('REDIS_PASSWORD') || undefined,
-      db: this.configService.get<number>('REDIS_DB', 0),
+      ...redisConfig,
       maxRetriesPerRequest: 3,
       retryStrategy: (times) => {
         const delay = Math.min(times * 50, 2000);
@@ -24,10 +32,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     });
 
     this.subscriber = new Redis({
-      host: this.configService.get<string>('REDIS_HOST', 'localhost'),
-      port: this.configService.get<number>('REDIS_PORT', 6379),
-      password: this.configService.get<string>('REDIS_PASSWORD') || undefined,
-      db: this.configService.get<number>('REDIS_DB', 0),
+      ...redisConfig,
       maxRetriesPerRequest: null,
     });
 
