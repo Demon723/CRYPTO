@@ -18,7 +18,6 @@ test.describe('UI Components', () => {
   });
 
   test('should have working tabs', async ({ page }) => {
-    // Find tab triggers
     const tabs = page.locator('[role="tab"]');
     if (await tabs.count() > 0) {
       await tabs.first().click();
@@ -29,16 +28,12 @@ test.describe('UI Components', () => {
   test('should have accessible form inputs', async ({ page }) => {
     const inputs = page.locator('input');
     const count = await inputs.count();
-    
     if (count > 0) {
-      // Check that inputs have labels or aria-labels
       for (let i = 0; i < Math.min(count, 5); i++) {
         const input = inputs.nth(i);
-        const hasLabel = await input.locator('..//label').count() > 0;
         const hasAriaLabel = await input.getAttribute('aria-label');
         const hasPlaceholder = await input.getAttribute('placeholder');
-        
-        expect(hasLabel || hasAriaLabel || hasPlaceholder).toBeTruthy();
+        expect(hasAriaLabel || hasPlaceholder).toBeTruthy();
       }
     }
   });
@@ -61,26 +56,20 @@ test.describe('UI Components', () => {
         errors.push(msg.text());
       }
     });
-    
     await page.goto('/');
     await page.waitForTimeout(2000);
-    
-    // Filter out expected errors (like analytics, etc.)
-    const criticalErrors = errors.filter(err => 
-      !err.includes('analytics') && 
+    const criticalErrors = errors.filter(err =>
+      !err.includes('analytics') &&
       !err.includes('gtag') &&
       !err.includes('favicon')
     );
-    
     expect(criticalErrors.length).toBe(0);
   });
 
   test('should not have broken images', async ({ page }) => {
     await page.goto('/');
-    
     const images = page.locator('img');
     const count = await images.count();
-    
     for (let i = 0; i < count; i++) {
       const img = images.nth(i);
       const src = await img.getAttribute('src');

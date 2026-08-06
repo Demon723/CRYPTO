@@ -5,7 +5,7 @@ import { TerminusModule } from '@nestjs/terminus';
 import { BullModule } from '@nestjs/bullmq';
 
 import { PrismaModule } from './modules/common/modules/prisma.module';
-// import { RedisModule } from './modules/common/modules/redis.module';
+import { RedisModule } from './modules/common/modules/redis.module';
 import { LoggerModule } from './modules/common/modules/logger.module';
 import { HttpModule } from './modules/common/modules/http.module';
 
@@ -63,7 +63,7 @@ import { configValidationSchema } from './modules/common/config.schema';
     }),
 
     PrismaModule,
-    // RedisModule,
+    RedisModule,
     LoggerModule,
     HttpModule,
 

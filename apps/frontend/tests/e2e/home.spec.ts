@@ -13,7 +13,6 @@ test.describe('Landing Page', () => {
   test('should display navigation with correct links', async ({ page }) => {
     const nav = page.locator('nav');
     await expect(nav).toBeVisible();
-    
     await expect(page.locator('text=Features')).toBeVisible();
     await expect(page.locator('text=Pricing')).toBeVisible();
     await expect(page.locator('text=Docs')).toBeVisible();
@@ -21,8 +20,8 @@ test.describe('Landing Page', () => {
 
   test('should display hero section with CTA buttons', async ({ page }) => {
     await expect(page.locator('text=AI Crypto Operating System')).toBeVisible();
-    await expect(page.locator('text=Get Started')).toBeVisible();
-    await expect(page.locator('text=Learn More')).toBeVisible();
+    await expect(page.locator('button:has-text("Get Started")')).toBeVisible();
+    await expect(page.locator('button:has-text("Learn More")')).toBeVisible();
   });
 
   test('should display feature cards', async ({ page }) => {
@@ -34,7 +33,6 @@ test.describe('Landing Page', () => {
       'Token Research',
       'Real-Time Alerts',
     ];
-
     for (const feature of features) {
       await expect(page.locator(`text=${feature}`)).toBeVisible();
     }
@@ -48,14 +46,13 @@ test.describe('Landing Page', () => {
   });
 
   test('should navigate to login page', async ({ page }) => {
-    await page.click('text=Get Started');
+    await page.click('button:has-text("Get Started")');
     await expect(page).toHaveURL(/.*login/);
   });
 
   test('should have working tab navigation', async ({ page }) => {
     const featuresTab = page.locator('button:has-text("Features")');
     const pricingTab = page.locator('button:has-text("Pricing")');
-    
     await expect(featuresTab).toBeVisible();
     await expect(pricingTab).toBeVisible();
   });
@@ -63,15 +60,11 @@ test.describe('Landing Page', () => {
   test('should be responsive on mobile', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto('/');
-    
-    // Mobile menu should be visible
     await expect(page.locator('text=Synex')).toBeVisible();
   });
 
   test('should have accessible color contrast', async ({ page }) => {
     await page.goto('/');
-    
-    // Check that text is visible (not white on white, etc.)
     const body = page.locator('body');
     await expect(body).toBeVisible();
   });

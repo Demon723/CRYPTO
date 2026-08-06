@@ -19,11 +19,8 @@ test.describe('Authentication Flow', () => {
 
     test('should show validation errors for empty form', async ({ page }) => {
       await page.click('button:has-text("Sign In")');
-      
-      // HTML5 validation should prevent submission
       const email = page.locator('input[type="email"]');
       const password = page.locator('input[type="password"]');
-      
       await expect(email).toHaveAttribute('required');
       await expect(password).toHaveAttribute('required');
     });
@@ -45,11 +42,7 @@ test.describe('Authentication Flow', () => {
     test('should show loading state on submit', async ({ page }) => {
       await page.fill('input[type="email"]', 'test@example.com');
       await page.fill('input[type="password"]', 'password123');
-      
-      // Click sign in and check for loading state
       await page.click('button:has-text("Sign In")');
-      
-      // Button should show loading state
       await expect(page.locator('button:has-text("Signing in...")')).toBeVisible();
     });
   });
@@ -65,10 +58,10 @@ test.describe('Authentication Flow', () => {
     });
 
     test('should have registration form with correct fields', async ({ page }) => {
-      await expect(page.locator('input[type="text"]').first).toBeVisible(); // name
+      await expect(page.locator('input[type="text"]').first()).toBeVisible();
       await expect(page.locator('input[type="email"]')).toBeVisible();
-      await expect(page.locator('input[type="password"]').first).toBeVisible(); // password
-      await expect(page.locator('input[type="password"]').last).toBeVisible(); // confirm password
+      await expect(page.locator('input[type="password"]').first()).toBeVisible();
+      await expect(page.locator('input[type="password"]').last()).toBeVisible();
       await expect(page.locator('button:has-text("Sign Up")')).toBeVisible();
     });
 
@@ -80,12 +73,10 @@ test.describe('Authentication Flow', () => {
     test('should validate password confirmation', async ({ page }) => {
       await page.fill('input[type="text"]', 'Test User');
       await page.fill('input[type="email"]', 'test@example.com');
-      await page.fill('input[type="password"]').first.fill('Password123!');
-      await page.fill('input[type="password"]').last.fill('DifferentPassword');
-      
+      const passwordInputs = page.locator('input[type="password"]');
+      await passwordInputs.first().fill('Password123!');
+      await passwordInputs.last().fill('DifferentPassword');
       await page.click('button:has-text("Sign Up")');
-      
-      // Should show error or not submit
       await expect(page.locator('text=Create an account')).toBeVisible();
     });
 

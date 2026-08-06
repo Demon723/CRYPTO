@@ -24,23 +24,28 @@ async function bootstrap() {
   app.enableShutdownHooks();
 
   // Security headers via Helmet with CSP and HSTS
+  const cspDirectives: Record<string, string[]> = {
+    defaultSrc: ["'self'"],
+    scriptSrc: environment === 'production'
+      ? ["'self'"]
+      : ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+    styleSrc: ["'self'", "'unsafe-inline'"],
+    imgSrc: ["'self'", 'data:', 'https:'],
+    connectSrc: ["'self'", configService.get<string>('API_URL', 'http://localhost:4000')],
+    fontSrc: ["'self'", 'data:'],
+    objectSrc: ["'none'"],
+    mediaSrc: ["'self'"],
+    frameSrc: ["'none'"],
+    formAction: ["'self'"],
+  };
+
+  if (environment === 'production') {
+    cspDirectives.upgradeInsecureRequests = [];
+  }
+
   app.use(helmet({
     contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: environment === 'production'
-          ? ["'self'"]
-          : ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", 'data:', 'https:'],
-        connectSrc: ["'self'", configService.get<string>('API_URL', 'http://localhost:4000')],
-        fontSrc: ["'self'", 'data:'],
-        objectSrc: ["'none'"],
-        mediaSrc: ["'self'"],
-        frameSrc: ["'none'"],
-        formAction: ["'self'"],
-        upgradeInsecureRequests: environment === 'production' ? [] : undefined,
-      },
+      directives: cspDirectives as any,
       reportOnly: environment === 'development',
     },
     hsts: {
@@ -125,15 +130,13 @@ async function bootstrap() {
   const port = configService.get<number>('PORT', 4000);
   const host = configService.get<string>('HOST', '0.0.0.0');
 
-  if (environment !== 'production') {
-    try {
-      const { IoAdapter } = await import('@nestjs/platform-socket.io');
-      const ioAdapter = new RedisIoAdapter();
-      app.useWebSocketAdapter(ioAdapter);
-      logger.log('WebSocket adapter initialized with Redis');
-    } catch (error) {
-      logger.warn('WebSocket adapter failed to initialize, continuing without Redis', error);
-    }
+  try {
+    const { IoAdapter } = await import('@nestjs/platform-socket.io');
+    const ioAdapter = new RedisIoAdapter();
+    app.useWebSocketAdapter(ioAdapter);
+    logger.log('WebSocket adapter initialized with Redis');
+  } catch (error) {
+    logger.warn('WebSocket adapter failed to initialize, continuing without Redis', error);
   }
 
   await app.listen(port, host);

@@ -1,7 +1,8 @@
 {
   "build": {
     "builder": "DOCKERFILE",
-    "dockerfilePath": "apps/backend/Dockerfile"
+    "dockerfilePath": "apps/backend/Dockerfile",
+    "dockerContext": "."
   },
   "deploy": {
     "startCommand": "node dist/main",

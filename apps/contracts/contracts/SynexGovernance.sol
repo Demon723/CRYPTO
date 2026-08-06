@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol
 import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
+import { IVotes as LX47 } from "@openzeppelin/contracts/governance/utils/IVotes.sol";
 
 contract SynexGovernance is Governor, GovernorSettings, GovernorCountingSimple, GovernorVotes, GovernorTimelockControl, Ownable {
     address public immutable lxonToken;
@@ -21,7 +21,7 @@ contract SynexGovernance is Governor, GovernorSettings, GovernorCountingSimple, 
     )
         Governor("SynexGovernance")
         GovernorSettings(1 days, 7 days, 0)
-        GovernorVotes(ERC20Votes(_lxonToken))
+        GovernorVotes(LX47(_lxonToken))
         GovernorTimelockControl(TimelockController(payable(timelock)))
         Ownable(msg.sender)
     {

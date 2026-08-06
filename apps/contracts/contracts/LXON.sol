@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/governance/utils/Votes.sol";
+import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 
-contract LXON is ERC20, Ownable, Pausable {
+contract LXON is IERC20, Ownable, Pausable, Votes {
+    string public constant name = "LXON";
+    string public constant symbol = "LXON";
+    uint8 public constant decimals = 18;
+
     uint256 public constant MAX_SUPPLY = 1_000_000_000 * 10**18;
     uint256 public constant INITIAL_SUPPLY = 100_000_000 * 10**18;
 
@@ -23,6 +27,10 @@ contract LXON is ERC20, Ownable, Pausable {
         bool evictable;
     }
 
+    mapping(address => uint256) private _balances;
+    mapping(address => mapping(address => uint256)) private _allowances;
+    uint256 private _totalSupply;
+
     mapping(address => StorageRentInfo) public storageRent;
     mapping(address => uint256) public stateSize;
 
@@ -32,12 +40,43 @@ contract LXON is ERC20, Ownable, Pausable {
     event StorageRentPaid(address indexed account, uint256 amount);
     event StateEvicted(address indexed account);
 
-    constructor() ERC20("LXON", "LXON") Ownable(msg.sender) Pausable() {
+    constructor() Ownable(msg.sender) Pausable() EIP712("LXON", "1") {
         _mint(msg.sender, INITIAL_SUPPLY);
+        _delegate(msg.sender, msg.sender);
+    }
+
+    function totalSupply() public view override returns (uint256) {
+        return _totalSupply;
+    }
+
+    function balanceOf(address account) public view override returns (uint256) {
+        return _balances[account];
+    }
+
+    function allowance(address owner, address spender) public view override returns (uint256) {
+        return _allowances[owner][spender];
+    }
+
+    function approve(address spender, uint256 amount) public override whenNotPaused returns (bool) {
+        _approve(msg.sender, spender, amount);
+        return true;
+    }
+
+    function transfer(address to, uint256 amount) public override whenNotPaused returns (bool) {
+        _transfer(msg.sender, to, amount);
+        return true;
+    }
+
+    function transferFrom(address from, address to, uint256 amount) public override whenNotPaused returns (bool) {
+        uint256 currentAllowance = _allowances[from][msg.sender];
+        require(currentAllowance >= amount, "LXON: transfer amount exceeds allowance");
+        _approve(from, msg.sender, currentAllowance - amount);
+        _transfer(from, to, amount);
+        return true;
     }
 
     function mint(address to, uint256 amount) external onlyOwner {
-        require(totalSupply() + amount <= MAX_SUPPLY, "LXON: exceeds max supply");
+        require(_totalSupply + amount <= MAX_SUPPLY, "LXON: exceeds max supply");
         _mint(to, amount);
         emit EmissionMinted(amount);
     }
@@ -56,20 +95,18 @@ contract LXON is ERC20, Ownable, Pausable {
     }
 
     function burnFrom(address account, uint256 amount) public onlyOwner whenNotPaused {
-        _spendAllowance(account, msg.sender, amount);
+        uint256 currentAllowance = _allowances[account][msg.sender];
+        require(currentAllowance >= amount, "LXON: burn amount exceeds allowance");
+        _approve(account, msg.sender, currentAllowance - amount);
         _burn(account, amount);
         emit Burned(account, amount);
     }
 
     function distributeRevenue(uint256 amount) external onlyOwner {
-        require(totalSupply() > 0, "No supply");
+        require(_totalSupply > 0, "No supply");
         uint256 distributionAmount = (amount * REVENUE_SHARE_PERCENTAGE) / 100;
         _mint(address(this), distributionAmount);
         emit RevenueDistributed(distributionAmount);
-    }
-
-    function _update(address from, address to, uint256 value) internal override whenNotPaused {
-        super._update(from, to, value);
     }
 
     function payStorageRent(uint256 amount) external {
@@ -101,5 +138,49 @@ contract LXON is ERC20, Ownable, Pausable {
         uint256 elapsed = block.timestamp - rentInfo.lastPaid;
         owed = rentInfo.balanceOwed + (elapsed * STORAGE_RENT_RATE);
         evictable = rentInfo.evictable || owed > EVICTION_THRESHOLD;
+    }
+
+    function _approve(address owner, address spender, uint256 amount) internal {
+        require(owner != address(0), "LXON: approve from the zero address");
+        require(spender != address(0), "LXON: approve to the zero address");
+        _allowances[owner][spender] = amount;
+        emit Approval(owner, spender, amount);
+    }
+
+    function _transfer(address from, address to, uint256 amount) internal {
+        require(from != address(0), "LXON: transfer from the zero address");
+        require(to != address(0), "LXON: transfer to the zero address");
+        uint256 fromBalance = _balances[from];
+        require(fromBalance >= amount, "LXON: transfer amount exceeds balance");
+        unchecked {
+            _balances[from] = fromBalance - amount;
+        }
+        _balances[to] += amount;
+        emit Transfer(from, to, amount);
+        _transferVotingUnits(from, to, amount);
+    }
+
+    function _mint(address account, uint256 amount) internal {
+        require(account != address(0), "LXON: mint to the zero address");
+        _totalSupply += amount;
+        _balances[account] += amount;
+        emit Transfer(address(0), account, amount);
+        _transferVotingUnits(address(0), account, amount);
+    }
+
+    function _burn(address account, uint256 amount) internal {
+        require(account != address(0), "LXON: burn from the zero address");
+        uint256 accountBalance = _balances[account];
+        require(accountBalance >= amount, "LXON: burn amount exceeds balance");
+        unchecked {
+            _balances[account] = accountBalance - amount;
+            _totalSupply -= amount;
+        }
+        emit Transfer(account, address(0), amount);
+        _transferVotingUnits(account, address(0), amount);
+    }
+
+    function _getVotingUnits(address account) internal view override returns (uint256) {
+        return _balances[account];
     }
 }

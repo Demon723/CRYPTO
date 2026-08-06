@@ -10,8 +10,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
+COPY apps/backend/package.json apps/backend/package-lock.json ./
 RUN npm install --omit=dev
+RUN npm install -g pnpm
 
 FROM base AS builder
 WORKDIR /app
@@ -27,11 +28,11 @@ ENV NODE_ENV production
 
 RUN groupadd --system --gid 1001 nodejs && useradd --system --uid 1001 -g nodejs nestjs
 
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules ./node_modules
 
 USER nestjs
 

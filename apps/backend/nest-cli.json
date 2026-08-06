@@ -13,18 +13,5 @@
         "outDir": "dist"
       }
     ]
-  },
-  "monorepo": true,
-  "root": "apps/backend",
-  "projects": {
-    "backend": {
-      "type": "application",
-      "root": "src",
-      "entryFile": "main",
-      "sourceRoot": "src",
-      "compilerOptions": {
-        "tsConfigPath": "tsconfig.json"
-      }
-    }
   }
 }

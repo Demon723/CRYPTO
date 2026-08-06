@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { WebSocketGateway, WebSocketServer, SubscribeMessage, MessageBody, ConnectedSocket } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
@@ -8,6 +8,7 @@ import { PrismaService } from '../common/modules/prisma.service';
 export class WebsocketGateway implements OnModuleInit, OnModuleDestroy {
   @WebSocketServer()
   server: Server;
+  private readonly logger = new Logger(WebsocketGateway.name);
 
   constructor(
     private readonly jwtService: JwtService,
@@ -31,12 +32,12 @@ export class WebsocketGateway implements OnModuleInit, OnModuleDestroy {
 
     this.server.on('connection', (socket: Socket) => {
       const userId = socket.data.userId;
-      console.log(`User connected: ${userId}`);
+      this.logger.log(`User connected: ${userId}`);
 
       socket.join(`user:${userId}`);
 
       socket.on('disconnect', () => {
-        console.log(`User disconnected: ${userId}`);
+        this.logger.log(`User disconnected: ${userId}`);
       });
     });
   }

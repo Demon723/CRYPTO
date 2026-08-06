@@ -45,6 +45,7 @@ export default function TokensPage() {
   const [losers, setLosers] = useState<TokenData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('search');
+  const [showBackDesign, setShowBackDesign] = useState(false);
 
   useEffect(() => {
     fetchMarketData();
@@ -99,9 +100,19 @@ export default function TokensPage() {
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium">
-              {token.symbol.slice(0, 2)}
-            </div>
+            {token.symbol === 'LXON' ? (
+              <img 
+                src={showBackDesign ? "/lxon-coin-back.png" : "/lxon-coin.png"} 
+                alt="LXON" 
+                className="w-8 h-8 rounded-full cursor-pointer hover:scale-110 transition-transform"
+                onClick={() => setShowBackDesign(!showBackDesign)}
+                title="Click to flip coin"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium">
+                {token.symbol.slice(0, 2)}
+              </div>
+            )}
             <div>
               <CardTitle className="text-base">{token.symbol}</CardTitle>
               <CardDescription className="text-xs">{token.name}</CardDescription>

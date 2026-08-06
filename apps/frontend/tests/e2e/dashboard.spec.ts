@@ -2,7 +2,6 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Dashboard', () => {
   test.beforeEach(async ({ page }) => {
-    // Mock authentication
     await page.addInitScript(() => {
       localStorage.setItem('accessToken', 'mock-access-token');
       localStorage.setItem('refreshToken', 'mock-refresh-token');
@@ -17,15 +16,11 @@ test.describe('Dashboard', () => {
 
   test('should load dashboard with stats', async ({ page }) => {
     await page.goto('/dashboard');
-    
-    // Dashboard should load without redirecting to login
     await expect(page.locator('text=Dashboard')).toBeVisible();
   });
 
   test('should display sidebar navigation', async ({ page }) => {
     await page.goto('/dashboard');
-    
-    // Check for sidebar items
     await expect(page.locator('text=Portfolio')).toBeVisible();
     await expect(page.locator('text=Transactions')).toBeVisible();
     await expect(page.locator('text=Wallets')).toBeVisible();
@@ -52,8 +47,6 @@ test.describe('Dashboard', () => {
 
   test('should have theme toggle', async ({ page }) => {
     await page.goto('/dashboard');
-    
-    // Look for theme toggle button
     const themeToggle = page.locator('[aria-label="Toggle theme"]');
     if (await themeToggle.isVisible()) {
       await themeToggle.click();
@@ -62,16 +55,12 @@ test.describe('Dashboard', () => {
 
   test('should display user menu', async ({ page }) => {
     await page.goto('/dashboard');
-    
-    // User menu should be visible
     await expect(page.locator('text=Test User')).toBeVisible();
   });
 
   test('should be responsive on mobile', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto('/dashboard');
-    
-    // Dashboard should still load
     await expect(page.locator('text=Dashboard')).toBeVisible();
   });
 });
