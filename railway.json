@@ -1,8 +1,8 @@
 {
   "build": {
     "builder": "DOCKERFILE",
-    "dockerfilePath": "apps/backend/Dockerfile",
-    "dockerContext": "."
+    "dockerfilePath": "apps/backend/Dockerfile.railway",
+    "dockerContext": "apps/backend"
   },
   "deploy": {
     "startCommand": "node dist/main",

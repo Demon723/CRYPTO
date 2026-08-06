@@ -1,0 +1,41 @@
+FROM node:20-slim AS base
+
+FROM base AS deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl \
+    python3 \
+    make \
+    g++ \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm install --omit=dev
+RUN npm install -g pnpm
+
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+RUN pnpm run build
+
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+RUN groupadd --system --gid 1001 nodejs && useradd --system --uid 1001 -g nodejs nestjs
+
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/prisma ./prisma
+
+USER nestjs
+
+EXPOSE 4000
+
+CMD ["node", "dist/main"]
