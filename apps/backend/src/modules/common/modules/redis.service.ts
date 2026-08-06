@@ -11,6 +11,11 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   constructor(private readonly configService: ConfigService) {
     const redisUrl = this.configService.get<string>('REDIS_URL');
     
+    this.logger.log(`REDIS_URL environment variable: ${redisUrl ? 'SET' : 'NOT SET'}`);
+    if (redisUrl) {
+      this.logger.log(`REDIS_URL value: ${redisUrl.substring(0, 20)}...`);
+    }
+    
     const redisConfig = redisUrl 
       ? { url: redisUrl }
       : {
@@ -19,6 +24,8 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
           password: this.configService.get<string>('REDIS_PASSWORD') || undefined,
           db: this.configService.get<number>('REDIS_DB', 0),
         };
+
+    this.logger.log(`Redis config: ${JSON.stringify(redisConfig)}`);
 
     this.client = new Redis({
       ...redisConfig,
