@@ -47,12 +47,14 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
+      console.log('Attempting registration to:', process.env.NEXT_PUBLIC_API_URL);
       const response = await apiClient.post<RegisterResponse>('/auth/register', {
         name: formData.name,
         email: formData.email,
         password: formData.password,
       });
 
+      console.log('Registration successful:', response.data);
       const { accessToken, refreshToken, user } = response.data;
 
       localStorage.setItem('accessToken', accessToken);
@@ -66,7 +68,12 @@ export default function RegisterPage() {
 
       router.push('/dashboard');
     } catch (error: unknown) {
+      console.error('Registration error:', error);
       const message = error instanceof Error ? error.message : 'Registration failed';
+      if (error && typeof error === 'object' && 'response' in error) {
+        console.error('Response data:', (error as any).response?.data);
+        console.error('Response status:', (error as any).response?.status);
+      }
       toast({
         title: 'Registration failed',
         description: message,
