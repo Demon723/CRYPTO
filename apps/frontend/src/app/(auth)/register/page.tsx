@@ -34,6 +34,8 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submitted');
+    alert('Form submitted - check console for details');
 
     if (formData.password !== formData.confirmPassword) {
       toast({
@@ -45,6 +47,8 @@ export default function RegisterPage() {
     }
 
     setIsLoading(true);
+    console.log('API URL:', process.env.NEXT_PUBLIC_API_URL);
+    console.log('Form data:', formData);
 
     try {
       console.log('Attempting registration to:', process.env.NEXT_PUBLIC_API_URL);
@@ -74,6 +78,7 @@ export default function RegisterPage() {
         console.error('Response data:', (error as any).response?.data);
         console.error('Response status:', (error as any).response?.status);
       }
+      alert(`Registration failed: ${message}`);
       toast({
         title: 'Registration failed',
         description: message,
