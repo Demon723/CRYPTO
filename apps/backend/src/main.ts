@@ -89,9 +89,10 @@ async function bootstrap() {
   app.use(securityMiddleware);
 
   // CSRF protection for session-based endpoints (exclude x402 and API endpoints that use wallet auth)
-  if (environment === 'production') {
-    app.use(csurf({ cookie: { httpOnly: true, secure: true, sameSite: 'strict' } }));
-  }
+  // Disabled - this is a stateless API using wallet authentication, CSRF protection is not needed
+  // if (environment === 'production') {
+  //   app.use(csurf({ cookie: { httpOnly: true, secure: true, sameSite: 'strict' } }));
+  // }
 
   app.setGlobalPrefix(configService.get<string>('API_PREFIX', 'api/v1'), {
     exclude: ['/health', '/metrics'],
