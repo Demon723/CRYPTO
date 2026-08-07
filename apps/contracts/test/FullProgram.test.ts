@@ -92,9 +92,9 @@ describe('Full Program - LXON Token', function () {
   });
 });
 
-// ── SynexStaking Layer ────────────────────────────────────────────────────────
+// ── LXONStaking Layer ────────────────────────────────────────────────────────
 
-describe('Full Program - SynexStaking', function () {
+describe('Full Program - LXONStaking', function () {
   it('staking contract holds pre-seeded reward pool', async function () {
     const { staking } = await loadFixture(deployAll);
     expect(await staking.rewardPool()).to.be.gt(0n);
@@ -180,9 +180,9 @@ describe('Full Program - SynexStaking', function () {
   });
 });
 
-// ── SynexGovernance Layer ─────────────────────────────────────────────────────
+// ── LXONGovernance Layer ─────────────────────────────────────────────────────
 
-describe('Full Program - SynexGovernance', function () {
+describe('Full Program - LXONGovernance', function () {
   it('governance and timelock have correct references', async function () {
     const { governance, timelock, lxon } = await loadFixture(deployAll);
     expect(await governance.lxonToken()).to.equal(await lxon.getAddress());
@@ -216,9 +216,9 @@ describe('Full Program - SynexGovernance', function () {
     expect(await governance.clock()).to.be.gte(before);
   });
 
-  it('contract name is SynexGovernance', async function () {
+  it('contract name is LXONGovernance', async function () {
     const { governance } = await loadFixture(deployAll);
-    expect(await governance.name()).to.equal('SynexGovernance');
+    expect(await governance.name()).to.equal('LXONGovernance');
   });
 });
 

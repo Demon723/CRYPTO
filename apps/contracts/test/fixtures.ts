@@ -16,7 +16,7 @@
 
 import { ethers } from 'hardhat';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
-import type { LXON, SynexStaking, SynexGovernance } from '../typechain-types';
+import type { LXON, LXONStaking, LXONGovernance } from '../typechain-types';
 
 // Constants
 export const TOTAL_SUPPLY    = ethers.parseEther('100000000');
@@ -38,11 +38,11 @@ export interface LXONFixture {
 }
 
 export interface StakingFixture extends LXONFixture {
-  staking: SynexStaking;
+  staking: LXONStaking;
 }
 
 export interface GovernanceFixture extends LXONFixture {
-  governance: SynexGovernance;
+  governance: LXONGovernance;
   timelock:   any;
 }
 
@@ -64,8 +64,8 @@ export async function deployLXON(): Promise<LXONFixture> {
 export async function deployStaking(): Promise<StakingFixture> {
   const base = await deployLXON();
   const { lxon, owner } = base;
-  const SF = await ethers.getContractFactory('SynexStaking');
-  const staking = (await SF.deploy(await lxon.getAddress(), await lxon.getAddress())) as SynexStaking;
+  const SF = await ethers.getContractFactory('LXONStaking');
+  const staking = (await SF.deploy(await lxon.getAddress(), await lxon.getAddress())) as LXONStaking;
   await staking.waitForDeployment();
   await lxon.connect(owner).transfer(await staking.getAddress(), REWARD_SEED);
   await lxon.connect(owner).approve(await staking.getAddress(), REWARD_SEED);
@@ -80,8 +80,8 @@ export async function deployGovernance(): Promise<GovernanceFixture> {
   const TF = await ethers.getContractFactory('TimelockController');
   const timelock = await TF.deploy(TIMELOCK_DELAY, [owner.address], [owner.address], owner.address);
   await timelock.waitForDeployment();
-  const GF = await ethers.getContractFactory('SynexGovernance');
-  const governance = (await GF.deploy(await timelock.getAddress(), await lxon.getAddress())) as SynexGovernance;
+  const GF = await ethers.getContractFactory('LXONGovernance');
+  const governance = (await GF.deploy(await timelock.getAddress(), await lxon.getAddress())) as LXONGovernance;
   await governance.waitForDeployment();
   return { ...base, governance, timelock };
 }
@@ -94,16 +94,16 @@ export async function deployAll(): Promise<FullFixture> {
   const lxon = (await LF.deploy()) as LXON;
   await lxon.waitForDeployment();
 
-  const SF = await ethers.getContractFactory('SynexStaking');
-  const staking = (await SF.deploy(await lxon.getAddress(), await lxon.getAddress())) as SynexStaking;
+  const SF = await ethers.getContractFactory('LXONStaking');
+  const staking = (await SF.deploy(await lxon.getAddress(), await lxon.getAddress())) as LXONStaking;
   await staking.waitForDeployment();
 
   const TF = await ethers.getContractFactory('TimelockController');
   const timelock = await TF.deploy(TIMELOCK_DELAY, [owner.address], [owner.address], owner.address);
   await timelock.waitForDeployment();
 
-  const GF = await ethers.getContractFactory('SynexGovernance');
-  const governance = (await GF.deploy(await timelock.getAddress(), await lxon.getAddress())) as SynexGovernance;
+  const GF = await ethers.getContractFactory('LXONGovernance');
+  const governance = (await GF.deploy(await timelock.getAddress(), await lxon.getAddress())) as LXONGovernance;
   await governance.waitForDeployment();
 
   await lxon.transfer(user1.address, USER_ALLOCATION);

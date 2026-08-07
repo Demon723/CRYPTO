@@ -1,21 +1,7 @@
 packages:
   - "apps/*"
   - "packages/*"
-
-# Native dependencies that have pre-built binaries
-# Set to true if package uses native node-gyp bindings
-# Set to false if pure JavaScript or has prebuilt binaries for your environment
 allowBuilds:
-  '@nestjs/core': false        # Pure JS
-  '@prisma/client': true       # Has native bindings
-  '@prisma/engines': true      # Native binaries
-  '@scarf/scarf': false        # Pure JS
-  bcrypt: true                 # Native binding for password hashing
-  esbuild: false               # Prebuilt binaries available
-  keccak: true                 # Crypto primitive - native binding
-  msgpackr-extract: true       # Native performance optimization
-  prisma: true                 # Contains native tools
-  protobufjs: false            # Pure JS available
-  secp256k1: true              # Cryptography - native binding
-  sharp: true                  # Image processing - native bindings
-  unrs-resolver: false         # Pure implementation
+  esbuild: set this to true or false
+  keccak: set this to true or false
+  secp256k1: set this to true or false

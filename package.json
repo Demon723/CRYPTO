@@ -1,28 +1,26 @@
 {
-  "name": "synex",
+  "name": "lxon",
   "version": "1.0.0",
-  "description": "Production-ready AI Crypto Operating System",
+  "description": "LXON Cryptocurrency Program",
   "private": true,
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
+  "bin": {
+    "lxon": "./cli.ts"
+  },
   "scripts": {
-    "dev": "pnpm run -r dev",
+    "cli": "tsx cli.ts",
+    "demo": "tsx apps/lxon-blockchain/src/demo.ts",
     "build": "pnpm run -r build",
-    "build:backend": "pnpm --filter backend build",
-    "build:frontend": "pnpm --filter frontend build",
+    "build:blockchain": "pnpm --filter lxon-blockchain build",
+    "build:contracts": "pnpm --filter lxon-contracts compile",
     "test": "pnpm run -r test",
-    "lint": "pnpm run -r lint",
+    "test:blockchain": "pnpm --filter lxon-blockchain test",
+    "test:contracts": "pnpm --filter lxon-contracts test",
     "typecheck": "pnpm run -r typecheck",
-    "clean": "pnpm run -r clean",
-    "db:generate": "pnpm --filter backend db:generate",
-    "db:push": "pnpm --filter backend db:push",
-    "db:migrate": "pnpm --filter backend db:migrate",
-    "db:seed": "pnpm --filter backend db:seed",
-    "docker:up": "docker compose -f infrastructure/docker/docker-compose.yml up -d",
-    "docker:down": "docker compose -f infrastructure/docker/docker-compose.yml down",
-    "docker:logs": "docker compose -f infrastructure/docker/docker-compose.yml logs -f"
+    "clean": "pnpm run -r clean"
   },
   "engines": {
     "node": ">=20.0.0",
@@ -30,18 +28,15 @@
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
-    "typescript": "^5.3.0",
-    "tsx": "^4.7.0"
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0"
   },
   "keywords": [
-    "crypto",
-    "ai",
-    "operating-system",
+    "cryptocurrency",
     "blockchain",
-    "nextjs",
-    "nestjs",
-    "ethereum"
+    "smart-contracts",
+    "crypto"
   ],
-  "author": "Synex Team",
+  "author": "LXON Team",
   "license": "MIT"
 }

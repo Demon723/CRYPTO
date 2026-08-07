@@ -2,7 +2,7 @@
 
 ## System Overview
 
-Synex is a production-ready AI-powered crypto operating system built with a modern, scalable architecture.
+LXON is a production-ready AI-powered crypto operating system built with a modern, scalable architecture.
 
 ## High-Level Architecture
 

@@ -1,4 +1,4 @@
-# Synex Architecture
+# LXON Architecture
 
 ## System Overview
 
@@ -84,7 +84,7 @@
 - Local state (UI state)
 
 ### Real-time
-- WebSocket connection via `SynexWebSocket` client
+- WebSocket connection via `LXONWebSocket` client
 - Auto-reconnect with exponential backoff
 
 ## Security

@@ -1,4 +1,4 @@
-# Synex: Decentralized AI-Agent Operating System
+# LXON: Decentralized AI-Agent Operating System
 
 **White Paper v0.1 — July 2026**
 
@@ -11,16 +11,16 @@
 
 ## Abstract
 
-Synex proposes a decentralized platform where autonomous AI agents operate as first-class
+LXON proposes a decentralized platform where autonomous AI agents operate as first-class
 economic entities: they hold wallets, pay for inference and data via standardized
 micropayment protocols, and participate in on-chain governance. The native token, **LXOM**
 (`LXOM`), provides the incentive layer — staking for subnet allocation, fee settlement for
 AI-agent commerce, and governance rights over protocol upgrades. Rather than building a
-sovereign Layer-1 from scratch, Synex adopts proven decentralized-AI protocols (x402/MPP
+sovereign Layer-1 from scratch, LXON adopts proven decentralized-AI protocols (x402/MPP
 agent payments, verifiable inference from OpenGradient/Gensyn/Ritual, and MemSync-style
 encrypted memory) and layers them atop existing EVM chains (Base, Ethereum, Polygon).
 This "adopt-integrate-extend" approach reduces R&D risk while preserving a future migration
-path to a Synex-branded app-chain once the token economy matures.
+path to a LXON-branded app-chain once the token economy matures.
 
 ---
 
@@ -42,17 +42,17 @@ incompatible with the speed, scale, and autonomy of agentic workflows. Agents ne
 Existing blockchains were not designed for these primitives. Sovereign AI chains
 (Bittensor, Gensyn, Ritual, NEAR, Morpheus, OpenGradient) are experimenting with
 verifiable inference, subnet emission, and agent payments — but each is a bespoke,
-high-risk R&D effort. Synex takes a different stance: **integrate the best available
+high-risk R&D effort. LXON takes a different stance: **integrate the best available
 protocols, ship a working vertical slice, then harden the tokenomics around real usage.**
 
-### 1.2 What Synex Is (and Is Not)
+### 1.2 What LXON Is (and Is Not)
 
 | Statement | Verdict |
 |-----------|---------|
-| Synex is a sovereign Layer-1 blockchain with sharded consensus, zk provers, and FHE VM. | **Not yet.** That is a future migration option; the current deliverable is a dApp + token on existing EVM chains. |
-| Synex is a decentralized AI-agent operating system built on adopted protocols. | **Yes.** This is the working definition. |
+| LXON is a sovereign Layer-1 blockchain with sharded consensus, zk provers, and FHE VM. | **Not yet.** That is a future migration option; the current deliverable is a dApp + token on existing EVM chains. |
+| LXON is a decentralized AI-agent operating system built on adopted protocols. | **Yes.** This is the working definition. |
 | LXOM is a live, traded token with a market price. | **No.** LXOM is an undeployed ERC-20 contract. It has no on-chain presence, no liquidity, and no market price. |
-| Synex has a defined team, CEO, or legal entity. | **No.** The repository contains only a placeholder author ("Synex Team"). |
+| LXON has a defined team, CEO, or legal entity. | **No.** The repository contains only a placeholder author ("LXON Team"). |
 
 ---
 
@@ -102,7 +102,7 @@ separate economic silos. There is no on-chain mechanism to:
 - Allocate network emissions to the most useful AI subnets based on net staking flow
   (Bittensor's Taoflow / Dynamic TAO).
 
-Synex addresses all four problems through a single architecture: **LXOM-backed agentic
+LXON addresses all four problems through a single architecture: **LXOM-backed agentic
 economics on adopted protocols.**
 
 ---
@@ -125,7 +125,7 @@ economics on adopted protocols.**
 The first shipped feature is a concrete, billable use case:
 
 1. User (or autonomous agent) requests a smart-contract risk analysis.
-2. The Synex backend returns `HTTP 402 Payment Required` with an x402 payment spec
+2. The LXON backend returns `HTTP 402 Payment Required` with an x402 payment spec
    (chain, LXOM/USDC amount, payee address).
 3. The agent's embedded wallet settles the payment atomically.
 4. The backend forwards the request to an external verifiable-inference provider
@@ -186,13 +186,13 @@ without human intervention or API keys.**
 
 ```
 +----------------------------------------------------------------------+
-|                        Synex Platform                                |
+|                        LXON Platform                                |
 +--------------+--------------+--------------+-------------------------+
 |   Frontend   |   Backend    |   Contracts  |   AI Subnet Layer       |
 |  (Next.js)   |   (NestJS)   |   (Solidity) |   (Adopted APIs)        |
 |  Wagmi/      |  x402 Module |  LXOM.sol    |  OpenGradient / Gensyn  |
-|  RainbowKit  |  Verifiable  |  SynexStaking|  / Ritual (TEE/zk)      |
-|  Agent Wallet|  Inference   |  SynexGov    |  MemSync Memory         |
+|  RainbowKit  |  Verifiable  |  LXONStaking|  / Ritual (TEE/zk)      |
+|  Agent Wallet|  Inference   |  LXONGov    |  MemSync Memory         |
 +------+-------+------+-------+------+-------+-------------+-----------+
        |              |              |                   |
        v              v              v                   v
@@ -211,7 +211,7 @@ without human intervention or API keys.**
 | Verifiable-inference service | Wraps external provider APIs; caches results with attestation proofs. |
 | Agent wallet (frontend) | Wagmi-based embedded wallet capable of signing x402 payment transactions. |
 | `LXOM.sol` (hardened) | Removes owner mint; adds time-locked/DAO-controlled emission, burn sink. |
-| `SynexStaking.sol` (extended) | Staked LXOM allocates emission weight to AI subnets. |
+| `LXONStaking.sol` (extended) | Staked LXOM allocates emission weight to AI subnets. |
 
 ---
 
@@ -270,7 +270,7 @@ exist yet.*
 Inspired by Bittensor's Yuma Consensus and Dynamic TAO (dTAO), but simplified for the
 first milestone:
 
-1. Users stake LXOM into `SynexStaking.sol`.
+1. Users stake LXOM into `LXONStaking.sol`.
 2. Stakes are mapped to "AI subnets" (e.g., "Contract Analysis Subnet," "Portfolio
    Prediction Subnet").
 3. Emission weight per subnet = `sum(stake_to_subnet) / sum(total_staked)`.
@@ -285,14 +285,14 @@ dispute games, or zk spot-checks. Those remain deferred.
 
 ### 5.4 Governance
 
-- `SynexGovernance.sol` uses OpenZeppelin `Governor` + `TimelockController`.
+- `LXONGovernance.sol` uses OpenZeppelin `Governor` + `TimelockController`.
 - `LXOM` carries `ERC20Votes` -- voting power = token balance at the snapshot block.
 - Minimum proposal threshold: 0.1% of circulating LXOM.
 - Quorum: 4% of circulating LXOM.
 - Voting delay: 1 block (adjustable).
 - Timelock delay: 48 hours (adjustable).
 
-**Current state:** `SynexGovernance.sol` exists (54 lines) but is untested and undeployed.
+**Current state:** `LXONGovernance.sol` exists (54 lines) but is untested and undeployed.
 Full governance activation is Step 0 task 2.
 
 ---
@@ -306,7 +306,7 @@ HTTP 402 "Payment Required" for autonomous agents. It operates without user sess
 API keys:
 
 ```
-Agent                    Synex Server
+Agent                    LXON Server
   |                           |
   |--- POST /api/ai/analyze -->|
   |                           |
@@ -320,14 +320,14 @@ Agent                    Synex Server
   |<-- 200 + analysis ---------|
 ```
 
-**Why x402 fits Synex:**
+**Why x402 fits LXON:**
 - No API key management (agents authenticate with wallets, not credentials).
 - Standard HTTP headers -- compatible with existing web infrastructure.
 - Live on Base, Solana, and Ethereum L1s (100M+ cumulative transactions on Base alone
   as of Q1 2026).
 - Supported by AWS, Google, Visa, Stripe, Circle, Cloudflare, Solana Foundation.
 
-**Synex implementation (`apps/backend/src/modules/x402/`):**
+**LXON implementation (`apps/backend/src/modules/x402/`):**
 - `X402ChallengeService` -- validates request, computes fee, returns 402 with payment spec.
 - `X402SettlementService` -- verifies on-chain payment receipt, fulfills request.
 - Supported assets: USDC on Base (primary), LXOM (secondary, post-deployment).
@@ -335,7 +335,7 @@ Agent                    Synex Server
 
 ### 6.2 Verifiable Inference Providers
 
-Rather than running AI models in-house, Synex adopts external providers that offer
+Rather than running AI models in-house, LXON adopts external providers that offer
 cryptographically verifiable inference:
 
 | Provider | Verification Mechanism | Status |
@@ -344,7 +344,7 @@ cryptographically verifiable inference:
 | **Gensyn** | Gradient-match proof-of-learning, decentralized compute marketplace | Testnet, mainnet pending |
 | **Ritual** | TEE-based inference with on-chain attestation, Celestia DA | Active, partnered with Celestia |
 
-**Synex integration:** A single `VerifiableInferenceService` abstraction with provider
+**LXON integration:** A single `VerifiableInferenceService` abstraction with provider
 switching. The first milestone targets OpenGradient's PIPE API for smart-contract risk
 analysis. If OpenGradient is unavailable, fall back to Ritual or a standard OpenAI
 wrapper (non-verifiable, with explicit user warning).
@@ -358,7 +358,7 @@ OpenGradient's MemSync demonstrates the pattern:
 - Structured memories are saved as encrypted vector embeddings on a decentralized network.
 - Users retrieve context via private semantic search; raw data never exposed.
 
-**Synex approach:** Do not build MemSync from scratch. Instead, design the `AgentMemory`
+**LXON approach:** Do not build MemSync from scratch. Instead, design the `AgentMemory`
 backend module against an interface:
 
 ```
@@ -370,11 +370,11 @@ interface MemoryProvider {
 ```
 
 Implementations: `OpenGradientMemoryProvider`, `LocalEncryptedProvider` (fallback), and
-future `SynexMemoryProvider` if the protocol matures.
+future `LXONMemoryProvider` if the protocol matures.
 
 ### 6.4 Model Ownership & Revenue Splitting (Sentient OML)
 
-Long-term, Synex may adopt Sentient's **Open, Monetizable, Loyal (OML)** framework:
+Long-term, LXON may adopt Sentient's **Open, Monetizable, Loyal (OML)** framework:
 - Cryptographic hashing of AI models.
 - Versioning tree logs forks and fine-tunes.
 - Revenue from downstream usage is split on-chain to original creators.
@@ -419,7 +419,7 @@ Renamed from `CMAI.sol` to `LXOM.sol`. Planned changes:
   to governance.
 - Emit `EmissionMinted`, `TreasuryBurned` events for on-chain analytics.
 
-### 8.2 SynexStaking.sol
+### 8.2 LXONStaking.sol
 
 Current contract (116 lines): basic staking with lock periods and reward calculation.
 Planned extensions:
@@ -428,7 +428,7 @@ Planned extensions:
 - `Taoflow` clipping: if `netStakeFlow(subnet) < 0` over a block epoch, reduce weight.
 - `decommission(bytes32 subnetId)` when net stake reaches zero.
 
-### 8.3 SynexGovernance.sol
+### 8.3 LXONGovernance.sol
 
 Current contract (54 lines): Governor with quorum and voting delay.
 Planned extensions:
@@ -451,8 +451,8 @@ Planned extensions:
 ### Milestone 0: Tokenomics Hardening (Weeks 1-4)
 - [ ] Rewrite `LXOM.sol`: fixed emission, no owner mint, DAO-controlled parameters.
 - [ ] Implement `VestingEscrow` for team/treasury allocations.
-- [ ] Extend `SynexStaking.sol` with subnet mapping + emission weight.
-- [ ] Harden `SynexGovernance.sol` with TimelockController.
+- [ ] Extend `LXONStaking.sol` with subnet mapping + emission weight.
+- [ ] Harden `LXONGovernance.sol` with TimelockController.
 - [ ] Comprehensive Hardhat tests (100% branch coverage for token/staking/governance).
 - [ ] Deploy to Base Sepolia; verify on Etherscan.
 
@@ -464,10 +464,10 @@ Planned extensions:
 - [ ] End-to-end test: frontend pays -> verifiable analysis returned.
 
 ### Milestone 2: Staking + Subnet Economics (Weeks 11-16)
-- [ ] Deploy hardened `LXOM.sol` + `SynexStaking.sol` to Base Sepolia (or mainnet if
+- [ ] Deploy hardened `LXOM.sol` + `LXONStaking.sol` to Base Sepolia (or mainnet if
       Milestone 0 is stable).
 - [ ] Frontend: Subnet dashboard, staking flow, reward claims.
-- [ ] Activate `SynexGovernance.sol` on testnet.
+- [ ] Activate `LXONGovernance.sol` on testnet.
 - [ ] Emission live on Base Sepolia; verify subnet weight math.
 
 ### Milestone 3: Memory + Extended Governance (Weeks 17-22)
@@ -517,9 +517,9 @@ Planned extensions:
 | **Morpheus** | Arbitrum / Base / ETH | Fair-launch, compute/capital/coder/community pools | MOR | 42M cap, declining emissions. Agent wallet model. |
 | **OpenGradient** | Base L2 | PIPE inference mempool, tFHE, MemSync | OPG | 1B supply; payment-gated LLM inference. Closest x402 integration. |
 | **NEAR** | Sovereign L1 | Nightshade sharding, AI intents | NEAR | General-purpose; AI integration is application-layer. |
-| **Synex (this)** | Base / ETH / Polygon (initially) | x402 + adopted verifiable inference | LXOM | dApp-first; adopt protocols; potential future app-chain. |
+| **LXON (this)** | Base / ETH / Polygon (initially) | x402 + adopted verifiable inference | LXOM | dApp-first; adopt protocols; potential future app-chain. |
 
-Synex's differentiation: **fastest path to a working AI-agent payment + verifiable inference
+LXON's differentiation: **fastest path to a working AI-agent payment + verifiable inference
 vertical slice** by standing on the shoulders of existing protocols, rather than building
 consensus from scratch.
 
@@ -527,18 +527,18 @@ consensus from scratch.
 
 ## 12. Conclusion
 
-Synex is not a whitepaper promise -- it is an **integration layer** that makes autonomous
+LXON is not a whitepaper promise -- it is an **integration layer** that makes autonomous
 AI agents economically sovereign on existing blockchains. The LXOM token provides the
 incentive substrate: staking for subnet security, fee settlement for agent commerce, and
 governance for protocol evolution. The x402 protocol provides the payment standard. External
 verifiable-inference providers (OpenGradient, Gensyn, Ritual) provide the compute
-trust layer. Synex's job is to wire these together, harden the tokenomics, and ship a
+trust layer. LXON's job is to wire these together, harden the tokenomics, and ship a
 vertical slice that proves the thesis with real usage -- not to rebuild consensus in Rust.
 
 The 4-phase sovereign-L1 roadmap described in the *AI Blockchain Architecture Blueprint*
 remains a **directional inspiration**, not an immediate build target. The blueprint's
 Phase 1-3 (sharded consensus, TEE-Rollup, FHE VM, zk spot-checks) require multi-year R&D
-and a dedicated systems-engineering team. Synex defers those until the token economy
+and a dedicated systems-engineering team. LXON defers those until the token economy
 justifies the cost -- at which point an app-chain migration becomes a concrete decision,
 not a speculative gamble.
 

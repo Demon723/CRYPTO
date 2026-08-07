@@ -2,7 +2,7 @@
 
 **Document v0.1 — July 2026**
 
-> This document defines the security architecture for the LXON token and the Synex platform.
+> This document defines the security architecture for the LXON token and the LXON platform.
 > It is a design specification, not a deployment record. No contracts have been audited or
 > deployed to a live network.
 
@@ -195,7 +195,7 @@ The x402 layer delivers AI outputs from external providers. The security require
 
 ### 5.1 Provider Trust Models
 
-| Provider | Mechanism | Trust Assumption | Synex Integration |
+| Provider | Mechanism | Trust Assumption | LXON Integration |
 |----------|-----------|-----------------|-------------------|
 | **OpenGradient** | PIPE inference mempool + tFHE encrypted compute | TEE hardware attestation; MPC key management | Active API; primary provider for Milestone 1 |
 | **Ritual** | TEE-based inference with on-chain attestation; Celestia DA | TEE hardware root of trust | Fallback provider |
@@ -261,7 +261,7 @@ explicit user acknowledgment before delivery.
 | **SQL injection** | Prisma ORM — parameterized queries only; no raw SQL in application code. |
 | **XSS** | React auto-escaping + DOMPurify on any user-generated content rendered in frontend. |
 | **CSRF** | SameSite cookies + CSRF tokens for session-based endpoints; wallet signatures for x402 endpoints. |
-| **CORS** | Whitelist `synex.ai` domain + localhost for development. |
+| **CORS** | Whitelist `lxon.ai` domain + localhost for development. |
 | **Authentication** | JWT access tokens (15min) + refresh tokens (7d, HTTP-only cookies). |
 | **Secrets management** | Environment variables via `@nestjs/config`; never committed. Production secrets in vault. |
 

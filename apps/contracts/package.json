@@ -1,7 +1,7 @@
 {
-  "name": "synex-contracts",
+  "name": "lxon-contracts",
   "version": "1.0.0",
-  "description": "Synex Smart Contracts - LXON Token, Staking, Governance",
+  "description": "LXON Smart Contracts - LXON Token, Staking, Governance",
   "license": "MIT",
   "scripts": {
     "compile": "hardhat compile",

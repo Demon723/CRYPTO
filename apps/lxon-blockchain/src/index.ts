@@ -10,6 +10,13 @@ export { WasmGovernanceEngine, GovernanceVote, ValidatorInfo } from './governanc
 export { WasmExecutor, ExecutionContext as WasmExecutionContext, ExecutionResult as WasmExecutionResult } from './execution/wasm-executor';
 export { NativeOracle, OraclePrice, OracleUpdate, ConsensusPrice } from './oracle';
 export { LONPriceFeed, LONOracleConfig, LONPricePoint, LONConsensusData } from './oracle/lon-feed';
+export { HDWallet, HDNode, generateMnemonic, mnemonicToSeed, seedToRootNode, derivePath, getAddress, getBIP44Address, Bip85, Bip85Config, Bip85Result } from './wallet';
+export { ScriptInterpreter, evaluateScript, ScriptContext, ScriptResult, OpCode, TaprootEngine, MASTBuilder, TaprootOutput, createTapLeaf, computeTapLeafHash, MiniscriptCompiler, MiniscriptPolicy, SimplicityInterpreter, SimplicityCombinator, SimplicityJet, SimplicityNode, SimplicityEnv, parseSimplicity, CovenantEngine, CovenantType, Covenant } from './script';
+export { SPVLightClient, CompactFilterBuilder, GolombRiceFilter, buildBasicFilter, verifyFilterMatch } from './lightclient';
+export { AnthemiusBlockBuilder, TransactionProfile, BlockAssemblyMetrics, balanceBlock, EncryptedMempool, EncryptedTransaction, TimeLockPuzzleGenerator, ThresholdDecryption } from './mempool';
+export { FrostThreshold, FrostKeyPackage, FrostSignatureShare, FrostThresholdConfig } from './crypto/frost';
+export { MuSig2, MuSig2SignatureShare, MuSig2KeyAggregation, MuSig2AggregatedNonce } from './crypto/musig2';
+export { CoinJoinProtocol, CoinJoinTransaction, CoinJoinInput, CoinJoinOutput, CoinJoinRound } from './privacy';
 export {
   TOKEN_CONSTANTS,
   TokenTxType,
