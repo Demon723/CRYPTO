@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  lxon-node:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8545:8545"
+      - "8546:8546"
+    volumes:
+      - lxon-data:/app/data
+      - lxon-logs:/app/logs
+    environment:
+      - NODE_ENV=production
+      - CHAIN_ID=1
+      - GENESIS_TIME=${GENESIS_TIME:-}
+      - VALIDATOR_ADDRESS=${VALIDATOR_ADDRESS:-}
+      - VALIDATOR_KEY=${VALIDATOR_KEY:-}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8545/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  lxon-explorer:
+    image: lxon/explorer:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - lxon-data:/app/data
+    depends_on:
+      - lxon-node
+    restart: unless-stopped
+
+volumes:
+  lxon-data:
+  lxon-logs:
