@@ -1,0 +1,47 @@
+{
+  "name": "@lxon/sdk",
+  "version": "1.0.0",
+  "description": "LXON TypeScript SDK - Comprehensive SDK for interacting with the LXON blockchain",
+  "main": "dist/src/LXONClient.js",
+  "types": "dist/src/LXONClient.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "lint": "eslint src/**/*.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "lxon",
+    "blockchain",
+    "sdk",
+    "typescript",
+    "utxo",
+    "quantum-resistant",
+    "scripting"
+  ],
+  "author": "LXON Foundation",
+  "license": "MIT",
+  "dependencies": {
+    "ethers": "^6.9.0",
+    "@lxon/helios-types": "workspace:*",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lxon-foundation/sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lxon-foundation/sdk/issues"
+  },
+  "homepage": "https://lxon.network"
+}

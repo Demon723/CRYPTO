@@ -14,7 +14,7 @@ describe('LXON Token', function () {
   beforeEach(async function () {
     [owner, user1, user2] = await ethers.getSigners();
     const LXONFactory = await ethers.getContractFactory('LXON');
-    lxon = await LXONFactory.deploy();
+    lxon = await LXONFactory.deploy() as LXON;
     await lxon.waitForDeployment();
   });
 

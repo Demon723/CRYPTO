@@ -1,7 +1,12 @@
 packages:
   - "apps/*"
   - "packages/*"
+  - "apps/contracts-helios/*"
+  - "apps/founder-device/*"
+  - "sdk/*"
 allowBuilds:
-  esbuild: set this to true or false
-  keccak: set this to true or false
-  secp256k1: set this to true or false
+  '@nestjs/core': set this to true or false
+  esbuild: true
+  keccak: true
+  secp256k1: true
+  sqlite3: set this to true or false

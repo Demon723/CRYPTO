@@ -1,0 +1,3 @@
+[submodule "apps/contracts-helios/lib/openzeppelin-contracts"]
+	path = apps/contracts-helios/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts

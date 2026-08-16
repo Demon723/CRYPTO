@@ -5,7 +5,9 @@
   "private": true,
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "apps/contracts-helios/*",
+    "apps/founder-device/*"
   ],
   "bin": {
     "lxon": "./cli.ts"
@@ -14,13 +16,24 @@
     "cli": "tsx cli.ts",
     "demo": "tsx apps/lxon-blockchain/src/demo.ts",
     "build": "pnpm run -r build",
+    "build:core": "pnpm run -r build",
     "build:blockchain": "pnpm --filter lxon-blockchain build",
     "build:contracts": "pnpm --filter lxon-contracts compile",
+    "build:contracts-helios": "pnpm --filter lxon-contracts-helios build",
+    "build:helios-types": "pnpm --filter @lxon/helios-types build",
+    "build:backend": "pnpm --filter lxon-backend build",
+    "build:founder-device": "pnpm --filter lxon-founder-device build",
     "test": "pnpm run -r test",
     "test:blockchain": "pnpm --filter lxon-blockchain test",
     "test:contracts": "pnpm --filter lxon-contracts test",
+    "test:contracts-helios": "pnpm --filter lxon-contracts-helios test",
     "typecheck": "pnpm run -r typecheck",
-    "clean": "pnpm run -r clean"
+    "clean": "pnpm run -r clean",
+    "founder:cli": "pnpm --filter lxon-founder-device dev",
+    "founder:api": "pnpm --filter lxon-founder-device api",
+    "founder:ui": "pnpm --filter lxon-founder-device ui",
+    "founder:install:pi": "pnpm --filter lxon-founder-device install:pi",
+    "founder:setup:nfc": "pnpm --filter lxon-founder-device setup:nfc"
   },
   "engines": {
     "node": ">=20.0.0",

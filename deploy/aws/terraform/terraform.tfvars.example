@@ -1,0 +1,27 @@
+# AWS Configuration
+aws_region = "us-east-1"
+environment = "production"
+project_name = "lxon"
+
+# Network Configuration
+vpc_cidr = "10.0.0.0/16"
+availability_zones = ["us-east-1a", "us-east-1b"]
+
+# Compute Configuration
+container_cpu = 256
+container_memory = 512
+task_count = 2
+
+# Database Configuration
+db_instance_class = "db.t3.micro"
+db_allocated_storage = 20
+db_name = "lxon"
+db_username = "lxon"
+
+# Application Configuration
+container_port = 8545
+health_check_path = "/health"
+enable_multi_az = true
+
+# Alerting
+alert_email = "alerts@example.com"

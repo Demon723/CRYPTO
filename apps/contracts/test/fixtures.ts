@@ -52,12 +52,12 @@ export interface FullFixture extends StakingFixture, GovernanceFixture {}
 export async function deployLXON(): Promise<LXONFixture> {
   const [owner, user1, user2, user3, treasury] = await ethers.getSigners();
   const F = await ethers.getContractFactory('LXON');
-  const lxon = (await F.deploy()) as LXON;
+  const lxon = await F.deploy();
   await lxon.waitForDeployment();
   await lxon.transfer(user1.address, USER_ALLOCATION);
   await lxon.transfer(user2.address, USER_ALLOCATION);
   await lxon.transfer(user3.address, USER_ALLOCATION);
-  return { lxon, owner, user1, user2, user3, treasury };
+  return { lxon: lxon as LXON, owner, user1, user2, user3, treasury };
 }
 
 // deployStaking
@@ -65,12 +65,12 @@ export async function deployStaking(): Promise<StakingFixture> {
   const base = await deployLXON();
   const { lxon, owner } = base;
   const SF = await ethers.getContractFactory('LXONStaking');
-  const staking = (await SF.deploy(await lxon.getAddress(), await lxon.getAddress())) as LXONStaking;
+  const staking = await SF.deploy(await lxon.getAddress());
   await staking.waitForDeployment();
   await lxon.connect(owner).transfer(await staking.getAddress(), REWARD_SEED);
   await lxon.connect(owner).approve(await staking.getAddress(), REWARD_SEED);
   await staking.connect(owner).fundRewardPool(REWARD_SEED);
-  return { ...base, staking };
+  return { ...base, staking: staking as LXONStaking };
 }
 
 // deployGovernance
@@ -81,9 +81,9 @@ export async function deployGovernance(): Promise<GovernanceFixture> {
   const timelock = await TF.deploy(TIMELOCK_DELAY, [owner.address], [owner.address], owner.address);
   await timelock.waitForDeployment();
   const GF = await ethers.getContractFactory('LXONGovernance');
-  const governance = (await GF.deploy(await timelock.getAddress(), await lxon.getAddress())) as LXONGovernance;
+  const governance = await GF.deploy(await timelock.getAddress(), await lxon.getAddress());
   await governance.waitForDeployment();
-  return { ...base, governance, timelock };
+  return { ...base, governance: governance as LXONGovernance, timelock };
 }
 
 // deployAll - THE FULL PROGRAM FIXTURE
@@ -91,11 +91,11 @@ export async function deployAll(): Promise<FullFixture> {
   const [owner, user1, user2, user3, treasury] = await ethers.getSigners();
 
   const LF = await ethers.getContractFactory('LXON');
-  const lxon = (await LF.deploy()) as LXON;
+  const lxon = await LF.deploy();
   await lxon.waitForDeployment();
 
   const SF = await ethers.getContractFactory('LXONStaking');
-  const staking = (await SF.deploy(await lxon.getAddress(), await lxon.getAddress())) as LXONStaking;
+  const staking = await SF.deploy(await lxon.getAddress());
   await staking.waitForDeployment();
 
   const TF = await ethers.getContractFactory('TimelockController');
@@ -103,7 +103,7 @@ export async function deployAll(): Promise<FullFixture> {
   await timelock.waitForDeployment();
 
   const GF = await ethers.getContractFactory('LXONGovernance');
-  const governance = (await GF.deploy(await timelock.getAddress(), await lxon.getAddress())) as LXONGovernance;
+  const governance = await GF.deploy(await timelock.getAddress(), await lxon.getAddress());
   await governance.waitForDeployment();
 
   await lxon.transfer(user1.address, USER_ALLOCATION);

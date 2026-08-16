@@ -10,3 +10,8 @@ coverage
 .DS_Store
 .idea
 .vscode
+apps/contracts/artifacts
+apps/contracts/cache
+apps/contracts/typechain-types
+apps/contracts-helios/cache
+apps/contracts-helios/out

@@ -71,6 +71,17 @@ export interface Transaction {
   read_keys: string[];
   write_dict?: Record<string, any>;
   logic?: (reads: Record<string, any>) => Record<string, any>;
+  astroProof?: {
+    version: number;
+    phase: number;
+    classicalSig: string;
+    classicalPub: string;
+    arcSigma: string;
+    arcPubKey: string;
+    algorithmId: number;
+    ephemeralPubKey: string;
+    nonce: bigint;
+  };
 }
 
 export interface DAGVertex {

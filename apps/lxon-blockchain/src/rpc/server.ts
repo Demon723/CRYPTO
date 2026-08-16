@@ -68,7 +68,7 @@ export class JsonRpcServer {
     }
   }
 
-  private handleRequest(request: RPCRequest): RPCResponse {
+  handleRequest(request: RPCRequest): RPCResponse {
     const { method, params, id } = request;
 
     switch (method) {

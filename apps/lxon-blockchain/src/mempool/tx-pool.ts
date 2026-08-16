@@ -23,6 +23,8 @@ export class TransactionPool {
   private bySender: Map<string, Set<string>> = new Map();
   private config: TransactionPoolConfig;
   private nonces: Map<string, number> = new Map();
+  private confirmedCount: number = 0;
+  private rejectedCount: number = 0;
 
   constructor(config: Partial<TransactionPoolConfig> = {}) {
     this.config = {
@@ -109,6 +111,7 @@ export class TransactionPool {
     tx.status = 'confirmed';
     this.pending.delete(hash);
     this.bySender.get(tx.sender)?.delete(hash);
+    this.confirmedCount++;
     return true;
   }
 
@@ -118,6 +121,7 @@ export class TransactionPool {
     tx.status = 'rejected';
     this.pending.delete(hash);
     this.bySender.get(tx.sender)?.delete(hash);
+    this.rejectedCount++;
     return true;
   }
 
@@ -134,13 +138,11 @@ export class TransactionPool {
   }
 
   getStats(): { pending: number; confirmed: number; rejected: number } {
-    let pending = 0, confirmed = 0, rejected = 0;
-    for (const tx of this.pending.values()) {
-      if (tx.status === 'pending') pending++;
-      else if (tx.status === 'confirmed') confirmed++;
-      else rejected++;
-    }
-    return { pending, confirmed, rejected };
+    return {
+      pending: this.pending.size,
+      confirmed: this.confirmedCount,
+      rejected: this.rejectedCount,
+    };
   }
 
   private computeHash(tx: Transaction): string {

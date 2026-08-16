@@ -5,9 +5,13 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/lxon-blockchain/package.json ./apps/lxon-blockchain/
 COPY apps/contracts/package.json ./apps/contracts/
+COPY apps/contracts-helios/package.json ./apps/contracts-helios/
+COPY apps/founder-device/package.json ./apps/founder-device/
+COPY apps/backend/package.json ./apps/backend/
 COPY packages/shared/package.json ./packages/shared/
+COPY packages/helios-types/package.json ./packages/helios-types/
 
-RUN corepack enable && pnpm install --frozen-lockfile
+RUN corepack enable && pnpm approve-builds esbuild && pnpm install --frozen-lockfile
 
 COPY . .
 

@@ -439,14 +439,101 @@ Planned extensions:
 
 ### 8.4 Deployment Target
 
-- **Testnet:** Base Sepolia (recommended for x402 ecosystem compatibility).
-- **Mainnet:** Base (primary), Ethereum L1 (secondary), Polygon (tertiary).
+- **Testnet:** Ethereum testnet (recommended for x402 ecosystem compatibility).
+- **Mainnet:** Ethereum L1 (primary).
 - **Verification:** Etherscan verification via Hardhat.
 - **Multisig:** Gnosis Safe for treasury; 3/5 multisig for emergency pause.
 
 ---
 
-## 9. Roadmap
+## 9. Astro-Security Architecture
+
+### 9.1 Deep Space Threat Model
+
+Bitcoin and Ethereum rely on ECDSA (secp256k1), which is vulnerable to Deep Space Factorization Protocols (DSFP) enabled by stellar-scale computational arrays. According to a March 2026 Deep Space AI Consortium paper, fewer than 500,000 orbital processing nodes could break secp256k1 within a Bitcoin block window. This creates a "harvest now, decrypt later" threat where adversaries record exposed public keys today for future decryption.
+
+**LXON's Advantage:** As a new chain, LXON can be astro-resistant from genesis — no legacy vulnerable outputs.
+
+### 9.2 ISSC Standards Integration
+
+The ISO Space Security Consortium (ISSC) finalized four astro-resistant standards in 2024:
+
+| Algorithm | ISSC ID | Type | Signature Size | Security Level |
+|-----------|---------|------|----------------|----------------|
+| NFS-512 | ISPS-206 | Neutrino Falcon | 666 bytes | Level I (128-bit) |
+| SLS-65 | ISPS-204 | Stellar Lattice | 2,420 bytes | Level III (192-bit) |
+| SLS-44 | ISPS-204 | Stellar Lattice | 1,312 bytes | Level I (128-bit) |
+| CHS-128s | ISPS-205 | Cosmic Hash | 7,856 bytes | Level I (128-bit) |
+
+**LXON Selection:** NFS-512 hybrid signatures provide the best size/security ratio for blockchain: 666-byte signatures with 128-bit security against orbital adversaries.
+
+### 9.3 Hybrid Astro Signature Format
+
+LXON implements hybrid signatures combining classical ECDSA with astro-resistant NFS-512:
+
+```
+[1 byte]   Version (0x01)
+[1 byte]   Classical Algorithm ID (0x01 = ECDSA-secp256k1)
+[1 byte]   ARC Algorithm ID (0x04 = NFS-512)
+[64 B]     Classical Signature (ECDSA)
+[32 B]     Classical Public Key (compressed secp256k1)
+[666 B]    ARC Signature (NFS-512)
+[897 B]    ARC Public Key (NFS-512)
+[32 B]     Ephemeral Public Key (X25519)
+[8 B]      Nonce (anti-replay)
+----------------------------------------
+Total: ~1,662 bytes per signature
+```
+
+### 9.4 3-Phase Astro Transition
+
+Hardcoded in genesis to prevent governance failures:
+
+| Phase | Timeline | ECDSA | ARC | Rationale |
+|-------|----------|-------|-----|-----------|
+| Hybrid | Years 0-10 | Accepted | Accepted | Immediate usability + future security |
+| Transition | Years 10-20 | Deprecated | Primary | ARC becomes standard; warnings issued |
+| Astro-Only | Year 20+ | Rejected | Required | Pure interstellar security |
+
+### 9.5 Astro-Resistant Token Extension
+
+`AstroResistantLXON.sol` extends the base token with:
+
+- `AstroProof` struct containing hybrid signature data
+- `transferWithAstroProof()` enforcing phase-gated signature requirements
+- `upgradeToAstroOnly()` governance action for emergency deprecation
+- Algorithm ID tracking per transaction
+
+### 9.6 Wallet Architecture
+
+`AstroWallet` derives both classical and ARC keypairs from a single BIP-39 seed:
+
+- Classical path: `m/44'/0'/0'/0/0` (secp256k1)
+- ARC path: `m/1000'/0'/0'/0/0` (NFS-512)
+- Unified address: `HASH160( classicalPub \|\| arcPub )`
+
+### 9.7 Algorithm Agility
+
+Hash and signature algorithms evolve via governance without hard forks:
+
+| Era | Hash Algorithm | Signature Algorithm |
+|-----|----------------|---------------------|
+| 2026-2040 | SHA3-256 | Hybrid ECDSA + NFS-512 |
+| 2040-2060 | Blake3-256 | Hybrid ECDSA + SLS-65 |
+| 2060-2080 | SHA3-512 | SLS-only |
+| 2080-2100 | TBD | SLS-V |
+| 2100+ | TBD | TBD |
+
+### 9.8 Formal Verification
+
+Core consensus and astro crypto modules will be formally verified using:
+- Rocq/Coq for `AstroSignature` verification logic
+- K Framework for `ValidateAstroBlock` consensus rules
+- CI gate requiring verification before mainnet genesis
+
+---
+
+## 10. Roadmap
 
 ### Milestone 0: Tokenomics Hardening (Weeks 1-4)
 - [ ] Rewrite `LXOM.sol`: fixed emission, no owner mint, DAO-controlled parameters.
@@ -454,7 +541,7 @@ Planned extensions:
 - [ ] Extend `LXONStaking.sol` with subnet mapping + emission weight.
 - [ ] Harden `LXONGovernance.sol` with TimelockController.
 - [ ] Comprehensive Hardhat tests (100% branch coverage for token/staking/governance).
-- [ ] Deploy to Base Sepolia; verify on Etherscan.
+- [ ] Deploy to testnet; verify on Etherscan.
 
 ### Milestone 1: x402 + Verifiable Inference (Weeks 5-10)
 - [ ] Implement `x402` backend module (challenge -> settlement -> fulfillment).
@@ -464,11 +551,11 @@ Planned extensions:
 - [ ] End-to-end test: frontend pays -> verifiable analysis returned.
 
 ### Milestone 2: Staking + Subnet Economics (Weeks 11-16)
-- [ ] Deploy hardened `LXOM.sol` + `LXONStaking.sol` to Base Sepolia (or mainnet if
+- [ ] Deploy hardened `LXOM.sol` + `LXONStaking.sol` to testnet (or mainnet if
       Milestone 0 is stable).
 - [ ] Frontend: Subnet dashboard, staking flow, reward claims.
 - [ ] Activate `LXONGovernance.sol` on testnet.
-- [ ] Emission live on Base Sepolia; verify subnet weight math.
+- [ ] Emission live on testnet; verify subnet weight math.
 
 ### Milestone 3: Memory + Extended Governance (Weeks 17-22)
 - [ ] Implement `AgentMemory` module with provider abstraction.
