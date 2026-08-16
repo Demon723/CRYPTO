@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LXONClient } from '@lxon/sdk';
 import { isPremiumTier, tierLabel, validateCardNumber } from '@lxon/helios-types';
+import { BridgePage } from './Bridge/BridgePage';
 
 interface WalletState {
   address: string;
@@ -43,7 +44,7 @@ export const Wallet: React.FC = () => {
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<'send' | 'receive' | 'history' | 'utxo' | 'helios'>('send');
+  const [tab, setTab] = useState<'send' | 'receive' | 'history' | 'utxo' | 'helios' | 'bridge'>('send');
   const [heliosCoins, setHeliosCoins] = useState<HeliosCoin[]>([]);
   const [selectedCoin, setSelectedCoin] = useState<HeliosCoin | null>(null);
   const [tbaBalance, setTbaBalance] = useState('0');
@@ -208,15 +209,15 @@ export const Wallet: React.FC = () => {
           <div className="grid grid-cols-3 gap-4">
             <div>
               <p className="text-sm text-purple-200">Total Balance</p>
-              <p className="text-3xl font-bold">{formatBalance(walletState.totalBalance)} LXOM</p>
+              <p className="text-3xl font-bold">{formatBalance(walletState.totalBalance)} XON</p>
             </div>
             <div>
               <p className="text-sm text-purple-200">Account Balance</p>
-              <p className="text-xl font-semibold">{formatBalance(walletState.balance)} LXOM</p>
+              <p className="text-xl font-semibold">{formatBalance(walletState.balance)} XON</p>
             </div>
             <div>
               <p className="text-sm text-purple-200">UTXO Balance</p>
-              <p className="text-xl font-semibold">{formatBalance(walletState.utxoBalance)} LXOM</p>
+              <p className="text-xl font-semibold">{formatBalance(walletState.utxoBalance)} XON</p>
             </div>
           </div>
         </div>
@@ -275,6 +276,16 @@ export const Wallet: React.FC = () => {
           >
             Helios Coins
           </button>
+          <button
+            onClick={() => setTab('bridge')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 ${
+              tab === 'bridge'
+                ? 'border-purple-500 text-purple-400'
+                : 'border-transparent text-gray-400 hover:text-white'
+            }`}
+          >
+            Bridge
+          </button>
         </div>
       </div>
 
@@ -288,7 +299,7 @@ export const Wallet: React.FC = () => {
 
         {tab === 'send' && !loading && (
           <div className="bg-gray-800 rounded-lg p-6">
-            <h2 className="text-xl font-bold mb-4">Send LXOM</h2>
+            <h2 className="text-xl font-bold mb-4">Send XON</h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm text-gray-400 mb-2">Recipient Address</label>
@@ -301,7 +312,7 @@ export const Wallet: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Amount (LXOM)</label>
+                <label className="block text-sm text-gray-400 mb-2">Amount (XON)</label>
                 <input
                   type="text"
                   placeholder="0.0"
@@ -313,7 +324,7 @@ export const Wallet: React.FC = () => {
               <div className="flex justify-between items-center">
                 <div>
                   <p className="text-sm text-gray-400">Available</p>
-                  <p className="font-semibold">{formatBalance(walletState.totalBalance)} LXOM</p>
+                  <p className="font-semibold">{formatBalance(walletState.totalBalance)} XON</p>
                 </div>
                 <button
                   onClick={sendTransaction}
@@ -329,7 +340,7 @@ export const Wallet: React.FC = () => {
 
         {tab === 'receive' && !loading && (
           <div className="bg-gray-800 rounded-lg p-6">
-            <h2 className="text-xl font-bold mb-4">Receive LXOM</h2>
+            <h2 className="text-xl font-bold mb-4">Receive XON</h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm text-gray-400 mb-2">Your Address</label>
@@ -366,7 +377,7 @@ export const Wallet: React.FC = () => {
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-300">Tx Hash</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-300">To</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-300">Value (LXOM)</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-300">Value (XON)</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-300">Date</th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-300">Status</th>
                 </tr>
@@ -422,7 +433,7 @@ export const Wallet: React.FC = () => {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold">{(Math.random() * 100).toFixed(2)} LXOM</p>
+                    <p className="font-semibold">{(Math.random() * 100).toFixed(2)} XON</p>
                     <p className="text-xs text-gray-400">
                       {new Date(Date.now() - i * 86400000).toLocaleDateString()}
                     </p>
@@ -528,6 +539,10 @@ export const Wallet: React.FC = () => {
               </div>
             )}
           </div>
+        )}
+
+        {tab === 'bridge' && !loading && (
+          <BridgePage />
         )}
       </div>
     </div>

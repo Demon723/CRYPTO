@@ -1,0 +1,112 @@
+name: Build and Push to ECR
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    strategy:
+      matrix:
+        include:
+          - service: lxon-node
+            dockerfile: docker/lxon-node.Dockerfile
+          - service: lxon-backend
+            dockerfile: docker/lxon-backend.Dockerfile
+          - service: lxon-explorer
+            dockerfile: docker/lxon-explorer.Dockerfile
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region ${{ env.AWS_REGION }} | \
+          docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -f ${{ matrix.dockerfile }} \
+            -t ${{ env.ECR_REGISTRY }}/${{ matrix.service }}:latest \
+            -t ${{ env.ECR_REGISTRY }}/${{ matrix.service }}:${{ github.sha }} \
+            .
+
+      - name: Push to ECR
+        run: |
+          docker push ${{ env.ECR_REGISTRY }}/${{ matrix.service }}:latest
+          docker push ${{ env.ECR_REGISTRY }}/${{ matrix.service }}:${{ github.sha }}
+
+      - name: Output image URI
+        run: |
+          echo "Image URI: ${{ env.ECR_REGISTRY }}/${{ matrix.service }}:${{ github.sha }}"
+
+  deploy-to-ecs:
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update ECS service - lxon-node
+        run: |
+          aws ecs update-service \
+            --cluster lxon-prod \
+            --service lxon-node \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Update ECS service - lxon-backend
+        run: |
+          aws ecs update-service \
+            --cluster lxon-prod \
+            --service lxon-backend \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Update ECS service - lxon-explorer
+        run: |
+          aws ecs update-service \
+            --cluster lxon-prod \
+            --service lxon-explorer \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Wait for services to stabilize
+        run: |
+          aws ecs wait services-stable \
+            --cluster lxon-prod \
+            --services lxon-node lxon-backend lxon-explorer \
+            --region ${{ env.AWS_REGION }}

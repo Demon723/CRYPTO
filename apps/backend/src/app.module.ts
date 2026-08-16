@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HeliosModule } from './modules/helios/helios.module';
+import { BridgeModule } from './modules/bridge/bridge.module';
 import { APP_FILTER } from '@nestjs/core';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
 
@@ -16,6 +17,7 @@ import { HttpExceptionFilter } from './filters/http-exception.filter';
       logging: process.env.NODE_ENV !== 'production',
     }),
     HeliosModule,
+    BridgeModule,
   ],
   providers: [
     {
