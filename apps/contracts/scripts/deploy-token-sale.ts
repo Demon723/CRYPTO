@@ -25,9 +25,8 @@ async function main() {
     console.log('\nDeploying TokenSale contract...');
     const TokenSale = await ethers.getContractFactory('LXONTokenSale');
     const tokenSale = await TokenSale.deploy(lxonTokenAddress, saleDuration);
-    await tokenSale.deployed();
     
-    console.log('TokenSale deployed to:', tokenSale.address);
+    console.log('TokenSale deployed to:', tokenSale.target);
     
     // Fund the token sale with LXON tokens
     console.log('\nFunding token sale with LXON tokens...');
@@ -37,12 +36,12 @@ async function main() {
     const fundingAmount = ethers.parseEther('1000000');
     console.log('Funding amount:', ethers.formatEther(fundingAmount), 'LXON');
     
-    const fundTx = await lxonToken.transfer(tokenSale.address, fundingAmount);
+    const fundTx = await lxonToken.transfer(tokenSale.target, fundingAmount);
     await fundTx.wait();
     console.log('Tokens transferred to sale contract');
     
     // Verify the funding
-    const saleBalance = await lxonToken.balanceOf(tokenSale.address);
+    const saleBalance = await lxonToken.balanceOf(tokenSale.target);
     console.log('Sale contract balance:', ethers.formatEther(saleBalance), 'LXON');
     
     // Get sale information
@@ -65,7 +64,7 @@ async function main() {
       network: network.name,
       chainId: Number(network.chainId),
       contracts: {
-        LXONTokenSale: tokenSale.address,
+        LXONTokenSale: tokenSale.target,
         LXON: lxonTokenAddress
       },
       deployment: {
