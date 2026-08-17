@@ -54,7 +54,7 @@ async function main() {
     
     // Test 3: Attempt to buy tokens (small amount)
     console.log('\n=== Test 3: Buy Tokens from Sale ===');
-    const purchaseAmount = ethers.parseEther('0.001'); // 0.001 native tokens
+    const purchaseAmount = ethers.parseEther('1'); // 1 native token (meets minimum)
     console.log('Purchase Amount:', ethers.formatEther(purchaseAmount), 'native tokens');
     
     const expectedTokens = (purchaseAmount * 10n**18n) / await tokenSale.TOKEN_PRICE();
