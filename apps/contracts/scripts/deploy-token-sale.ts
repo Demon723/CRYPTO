@@ -47,13 +47,13 @@ async function main() {
     // Get sale information
     const saleInfo = await tokenSale.getSaleInfo();
     console.log('\n=== Token Sale Information ===');
-    console.log('Tokens Sold:', ethers.formatEther(saleInfo.tokensSold));
-    console.log('Sale Cap:', ethers.formatEther(saleInfo.saleCap));
-    console.log('Token Price:', ethers.formatEther(saleInfo.tokenPrice), 'native tokens');
+    console.log('Tokens Sold:', saleInfo.tokensSold ? ethers.formatEther(saleInfo.tokensSold) : '0');
+    console.log('Sale Cap:', saleInfo.saleCap ? ethers.formatEther(saleInfo.saleCap) : '0');
+    console.log('Token Price:', saleInfo.tokenPrice ? ethers.formatEther(saleInfo.tokenPrice) : '0', 'native tokens');
     console.log('Sale Active:', saleInfo.saleActive);
-    console.log('Sale Start:', new Date(Number(saleInfo.saleStartTime) * 1000).toISOString());
-    console.log('Sale End:', new Date(Number(saleInfo.saleEndTime) * 1000).toISOString());
-    console.log('Remaining Tokens:', ethers.formatEther(saleInfo.remainingTokens));
+    console.log('Sale Start:', saleInfo.saleStartTime ? new Date(Number(saleInfo.saleStartTime) * 1000).toISOString() : 'N/A');
+    console.log('Sale End:', saleInfo.saleEndTime ? new Date(Number(saleInfo.saleEndTime) * 1000).toISOString() : 'N/A');
+    console.log('Remaining Tokens:', saleInfo.remainingTokens ? ethers.formatEther(saleInfo.remainingTokens) : '0');
     
     // Save deployment info
     const fs = require('fs');
