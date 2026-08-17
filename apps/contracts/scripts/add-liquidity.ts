@@ -3,9 +3,17 @@ import { ethers } from 'hardhat';
 async function main() {
   console.log('Adding liquidity to SimpleSwap AMM...');
   
-  const [deployer] = await ethers.getSigners();
-  console.log('Adding liquidity with account:', deployer.address);
-  console.log('Account balance:', ethers.formatEther(await ethers.provider.getBalance(deployer.address)));
+  // Use the owner account from private key
+  const privateKey = process.env.PRIVATE_KEY;
+  if (!privateKey) {
+    console.error('PRIVATE_KEY environment variable not set');
+    console.log('Please set PRIVATE_KEY in your .env file');
+    process.exit(1);
+  }
+  
+  const owner = new ethers.Wallet(privateKey, ethers.provider);
+  console.log('Adding liquidity with owner account:', owner.address);
+  console.log('Account balance:', ethers.formatEther(await ethers.provider.getBalance(owner.address)));
 
   try {
     // Get the deployed SimpleSwap contract address
@@ -15,7 +23,7 @@ async function main() {
     
     if (!fs.existsSync(deploymentFile)) {
       console.error('AMM deployment file not found. Please deploy AMM first.');
-      console.log('Run: npx hardhat run scripts/deploy-swap-production.ts --network lxon');
+      console.log('Run: npx hardhat run scripts/deploy-swap-production.ts --network localhost');
       process.exit(1);
     }
     
@@ -27,8 +35,8 @@ async function main() {
     console.log('LXON token address:', lxonTokenAddress);
 
     // Get contract instances
-    const swap = await ethers.getContractAt('SimpleSwap', swapAddress);
-    const lxonToken = await ethers.getContractAt('LXON', lxonTokenAddress);
+    const swap = await ethers.getContractAt('SimpleSwap', swapAddress, owner);
+    const lxonToken = await ethers.getContractAt('LXON', lxonTokenAddress, owner);
     
     // Check current reserves
     const [reserveLXON, reserveNative] = await swap.getReserves();
@@ -44,13 +52,13 @@ async function main() {
     console.log('LXON amount:', ethers.formatEther(lxonAmount));
     console.log('Native amount:', ethers.formatEther(nativeAmount));
     
-    // Check if deployer has enough LXON tokens
-    const lxonBalance = await lxonToken.balanceOf(deployer.address);
-    console.log('Deployer LXON balance:', ethers.formatEther(lxonBalance));
+    // Check if owner has enough LXON tokens
+    const lxonBalance = await lxonToken.balanceOf(owner.address);
+    console.log('Owner LXON balance:', ethers.formatEther(lxonBalance));
     
     if (lxonBalance < lxonAmount) {
       console.error('Insufficient LXON tokens. Need:', ethers.formatEther(lxonAmount), 'Have:', ethers.formatEther(lxonBalance));
-      console.log('Please mint or transfer LXON tokens to the deployer account first.');
+      console.log('Please mint or transfer LXON tokens to the owner account first.');
       process.exit(1);
     }
     
