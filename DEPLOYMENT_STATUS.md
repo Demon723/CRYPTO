@@ -68,11 +68,11 @@ The LXON token contract has been successfully deployed to your blockchain node v
 
 ## 📋 Next Steps for Making Tokens Tradable
 
-### 1. Liquidity Pool Setup
-- Deploy AMM contract for decentralized trading
-- Create LXON/ETH trading pair
-- Add initial liquidity to enable trading
-- Configure swap fees and parameters
+### 1. ✅ Liquidity Pool Setup - COMPLETED
+- ✅ Deploy AMM contract for decentralized trading
+- ✅ Create LXON/Native trading pair
+- ✅ Add initial liquidity to enable trading (10,000 LXON + 1 native token)
+- ✅ Configure swap fees (0.3%)
 
 ### 2. Token Sale Mechanism
 - Implement token sale contract if needed
@@ -95,9 +95,11 @@ The LXON token contract has been successfully deployed to your blockchain node v
 ## 🎯 Current Status
 
 **Token Contract**: ✅ Deployed to production (0x7A0F16bE284ad1F7bF158668704C6Ca9e44f2D00)
-**AMM Contract**: ⚠️ Needs fixes before deployment
+**AMM Contract**: ✅ Deployed to production (0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0)
+**Liquidity Pool**: ✅ Active (10,000 LXON + 1 native token)
 **Infrastructure**: ✅ Google Cloud Platform deployment successful
 **Testing**: ✅ Local and production testing successful
+**Trading**: ✅ Enabled and operational
 
 ## 📝 Deployment Commands
 
@@ -120,16 +122,16 @@ npx hardhat run scripts/test-lxon.ts --network localhost
 # Blockchain node running on GCE instance
 ```
 
-## 🔑 Important Addresses
+## � Important Addresses
 
-### Local Deployment
-- LXON Token: 0x5FbDB2315678afecb367f032d93F642f64180aa3
-- Deployer: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
-- User1: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
-
-### Deployment Account
-- Address: 0x14c870D65A513d3e01e8D0Bfd4115979a9cB6976
-- Private Key: 0xb61156c1ec13e33b775e5f7bfb1054ed640cbe71472f6dcf0060e778db4824f8
+### Production Deployment
+- **LXON Token Contract**: `0x7A0F16bE284ad1F7bF158668704C6Ca9e44f2D00`
+- **SimpleSwap AMM Contract**: `0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0`
+- **Deployment Account**: `0x14c870D65A513d3e01e8D0Bfd4115979a9cB6976`
+- **Private Key**: `0xb61156c1ec13e33b775e5f7bfb1054ed640cbe71472f6dcf0060e778db4824f8`
+- **RPC Endpoint**: `http://localhost:8545` (on GCE instance)
+- **Liquidity Pool**: 10,000 LXON + 1 native token
+- **Trading Fee**: 0.3%
 
 ## 📊 Token Economics
 
