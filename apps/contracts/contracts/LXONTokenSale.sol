@@ -3,9 +3,8 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract LXONTokenSale is Ownable, ReentrancyGuard {
+contract LXONTokenSale is Ownable {
     IERC20 public lxonToken;
     
     uint256 public constant TOKEN_PRICE = 0.0001 ether; // 1 LXON = 0.0001 native tokens
@@ -36,7 +35,7 @@ contract LXONTokenSale is Ownable, ReentrancyGuard {
         saleEndTime = block.timestamp + _saleDuration;
     }
     
-    function buyTokens() external payable nonReentrant {
+    function buyTokens() external payable {
         require(saleActive, "Sale is not active");
         require(block.timestamp >= saleStartTime, "Sale has not started");
         require(block.timestamp <= saleEndTime, "Sale has ended");
