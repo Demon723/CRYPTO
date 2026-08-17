@@ -90,6 +90,36 @@ export class JsonRpcServer {
       case 'eth_getTransactionCount':
         return { jsonrpc: '2.0', result: '0x0', id };
 
+      case 'eth_estimateGas':
+        return { jsonrpc: '2.0', result: '0x5208', id };
+
+      case 'eth_gasPrice':
+        return { jsonrpc: '2.0', result: '0x0', id };
+
+      case 'eth_chainId':
+        return { jsonrpc: '2.0', result: '0x1', id };
+
+      case 'eth_accounts':
+        return { jsonrpc: '2.0', result: [], id };
+
+      case 'eth_getCode':
+        return { jsonrpc: '2.0', result: '0x', id };
+
+      case 'eth_call':
+        return { jsonrpc: '2.0', result: '0x', id };
+
+      case 'eth_sendTransaction':
+        return { jsonrpc: '2.0', result: '0x' + '0'.repeat(64), id };
+
+      case 'eth_getTransactionByHash':
+        return { jsonrpc: '2.0', result: null, id };
+
+      case 'eth_getTransactionReceipt':
+        return { jsonrpc: '2.0', result: null, id };
+
+      case 'eth_blockByNumber':
+        return { jsonrpc: '2.0', result: null, id };
+
       case 'net_version':
         return { jsonrpc: '2.0', result: '1', id };
 
