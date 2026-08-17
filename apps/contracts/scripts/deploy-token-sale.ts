@@ -45,15 +45,19 @@ async function main() {
     console.log('Sale contract balance:', ethers.formatEther(saleBalance), 'LXON');
     
     // Get sale information
-    const saleInfo = await tokenSale.getSaleInfo();
     console.log('\n=== Token Sale Information ===');
-    console.log('Tokens Sold:', saleInfo.tokensSold ? ethers.formatEther(saleInfo.tokensSold) : '0');
-    console.log('Sale Cap:', saleInfo.saleCap ? ethers.formatEther(saleInfo.saleCap) : '0');
-    console.log('Token Price:', saleInfo.tokenPrice ? ethers.formatEther(saleInfo.tokenPrice) : '0', 'native tokens');
-    console.log('Sale Active:', saleInfo.saleActive);
-    console.log('Sale Start:', saleInfo.saleStartTime ? new Date(Number(saleInfo.saleStartTime) * 1000).toISOString() : 'N/A');
-    console.log('Sale End:', saleInfo.saleEndTime ? new Date(Number(saleInfo.saleEndTime) * 1000).toISOString() : 'N/A');
-    console.log('Remaining Tokens:', saleInfo.remainingTokens ? ethers.formatEther(saleInfo.remainingTokens) : '0');
+    const tokensSold = await tokenSale.tokensSold();
+    const saleActive = await tokenSale.saleActive();
+    const saleStartTime = await tokenSale.saleStartTime();
+    const saleEndTime = await tokenSale.saleEndTime();
+    
+    console.log('Tokens Sold:', ethers.formatEther(tokensSold));
+    console.log('Sale Cap:', ethers.formatEther(1000000n * 10n**18n), 'LXON');
+    console.log('Token Price:', ethers.formatEther(await tokenSale.TOKEN_PRICE()), 'native tokens');
+    console.log('Sale Active:', saleActive);
+    console.log('Sale Start:', new Date(Number(saleStartTime) * 1000).toISOString());
+    console.log('Sale End:', new Date(Number(saleEndTime) * 1000).toISOString());
+    console.log('Remaining Tokens:', ethers.formatEther(1000000n * 10n**18n - tokensSold));
     
     // Save deployment info
     const fs = require('fs');
