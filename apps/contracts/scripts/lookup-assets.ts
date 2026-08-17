@@ -23,8 +23,8 @@ async function main() {
     const lxonToken = await ethers.getContractAt('LXON', lxonTokenAddress, owner);
     const swap = await ethers.getContractAt('SimpleSwap', swapAddress, owner);
     
-    // Get command line arguments for address lookup
-    const targetAddress = process.argv[2] || owner.address;
+    // Get target address from environment variable or use owner address
+    const targetAddress = process.env.TARGET_ADDRESS || owner.address;
     console.log('Target Address:', targetAddress);
     
     console.log('\n=== Account Information ===');
