@@ -169,7 +169,7 @@ export class NativeMPT {
    */
   get(key: Buffer): Buffer | undefined {
     const node = this.traverse(this.root, key, 0);
-    return node?.value;
+    return node ? node.value : undefined;
   }
 
   /**

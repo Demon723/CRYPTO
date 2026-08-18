@@ -113,7 +113,8 @@ export class IOUringEngine {
   private async processReads(entries: SQEntry[]): Promise<void> {
     const offsets = entries.map(e => e.offset);
     const uniqueOffsets = [...new Set(offsets)];
-    const size = entries[0]?.size || 4096;
+    const firstEntry = entries[0];
+    const size = firstEntry ? firstEntry.size : 4096;
 
     try {
       const results = await this.ioBackend.readBlocks(uniqueOffsets, size);

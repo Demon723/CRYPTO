@@ -67,8 +67,8 @@ export class NativeTokenState {
   private readCallback?: (keys: string[]) => Promise<Map<string, Buffer>>;
 
   constructor(storageCallbacks?: { write?: (writes: StateWrite[]) => Promise<void>; read?: (keys: string[]) => Promise<Map<string, Buffer>> }) {
-    this.storageCallback = storageCallbacks?.write;
-    this.readCallback = storageCallbacks?.read;
+    this.storageCallback = storageCallbacks && storageCallbacks.write;
+    this.readCallback = storageCallbacks && storageCallbacks.read;
   }
 
   // ----- Account Operations -----
@@ -104,7 +104,7 @@ export class NativeTokenState {
     try {
       const addrBytes = Buffer.from(address.startsWith('0x') ? address.slice(2) : address, 'hex');
       const [account] = this.getAccount(addrBytes, Number.MAX_SAFE_INTEGER);
-      return account?.balance || null;
+      return account ? account.balance : null;
     } catch {
       return null;
     }

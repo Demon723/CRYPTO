@@ -45,7 +45,8 @@ export class TransactionPool {
       return { accepted: false, reason: 'Fee too low' };
     }
 
-    const senderCount = this.bySender.get(sender)?.size || 0;
+    const senderEntry = this.bySender.get(sender);
+    const senderCount = senderEntry ? senderEntry.size : 0;
     if (senderCount >= this.config.maxPerSender) {
       return { accepted: false, reason: 'Too many txs from sender' };
     }
@@ -87,7 +88,8 @@ export class TransactionPool {
     if (!tx) return false;
 
     this.pending.delete(hash);
-    this.bySender.get(tx.sender)?.delete(hash);
+    const senderMap = this.bySender.get(tx.sender);
+    if (senderMap) senderMap.delete(hash);
     return true;
   }
 
@@ -110,7 +112,8 @@ export class TransactionPool {
     if (!tx) return false;
     tx.status = 'confirmed';
     this.pending.delete(hash);
-    this.bySender.get(tx.sender)?.delete(hash);
+    const senderMap = this.bySender.get(tx.sender);
+    if (senderMap) senderMap.delete(hash);
     this.confirmedCount++;
     return true;
   }
@@ -120,7 +123,8 @@ export class TransactionPool {
     if (!tx) return false;
     tx.status = 'rejected';
     this.pending.delete(hash);
-    this.bySender.get(tx.sender)?.delete(hash);
+    const senderMap = this.bySender.get(tx.sender);
+    if (senderMap) senderMap.delete(hash);
     this.rejectedCount++;
     return true;
   }

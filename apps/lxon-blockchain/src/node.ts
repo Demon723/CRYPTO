@@ -166,7 +166,7 @@ export class LXONNode {
               res.end(JSON.stringify({
                 jsonrpc: '2.0',
                 id: 1,
-                error: { code: -32603, message: err?.message || 'Internal RPC error' },
+                error: { code: -32603, message: (err && err.message) || 'Internal RPC error' },
               }));
             }
           });
@@ -303,7 +303,7 @@ export class LXONNode {
       clearInterval(this.blockProductionInterval);
     }
     if (this.server) {
-      await new Promise(resolve => this.server?.close(resolve));
+      await new Promise(resolve => this.server && this.server.close(resolve));
     }
     console.log('[LXON Node] Stopped successfully.');
   }
