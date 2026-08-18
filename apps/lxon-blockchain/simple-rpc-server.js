@@ -61,6 +61,13 @@ const server = http.createServer((req, res) => {
               contractAddress: '0x' + '1'.repeat(40),
               logs: [],
               status: '0x1',
+              logsBloom: '0x' + '0'.repeat(512),
+              type: '0x2',
+              effectiveGasPrice: '0x64',
+              root: '0x' + '0'.repeat(64),
+              r: '0x' + '0'.repeat(64),
+              s: '0x' + '0'.repeat(64),
+              v: '0x1',
             };
             result = receipt;
             break;
@@ -77,6 +84,9 @@ const server = http.createServer((req, res) => {
               blockHash: '0x' + '0'.repeat(64),
               blockNumber: '0x1',
               transactionIndex: '0x0',
+              r: '0x' + '0'.repeat(64),
+              s: '0x' + '0'.repeat(64),
+              v: '0x1',
             };
             break;
           case 'eth_call':
