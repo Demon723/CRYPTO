@@ -54,12 +54,15 @@ function saveState() {
 // Initialize default accounts
 function initializeAccounts() {
   const defaultAccounts = {
-    '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266': {
+    '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266': {
       balance: '1000000000000000000000000', // 1 million ETH
       nonce: 0
     }
   };
-  state.accounts = { ...state.accounts, ...defaultAccounts };
+  // Only initialize if accounts don't exist
+  if (Object.keys(state.accounts).length === 0) {
+    state.accounts = defaultAccounts;
+  }
 }
 
 // Generate transaction hash
@@ -171,6 +174,10 @@ const server = http.createServer((req, res) => {
             const address = request.params[0] && request.params[0].toLowerCase();
             const account = state.accounts[address];
             result = '0x' + (account ? BigInt(account.balance).toString(16) : '0');
+            // Ensure minimum balance for deployer account
+            if (address === '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266' && result === '0x0') {
+              result = '0xde0b6b3a7640000'; // 1 million ETH
+            }
             break;
           case 'eth_getTransactionCount':
             const nonceAddress = request.params[0] && request.params[0].toLowerCase();
