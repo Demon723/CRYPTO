@@ -238,6 +238,27 @@ export class LXONNode {
       case 'eth_call':
         return '0x';
 
+      case 'eth_getTransactionByHash':
+        return {
+          hash: params[0] || '0x' + '0'.repeat(64),
+          from: '0x0000000000000000000000000000000000000000',
+          to: null,
+          value: '0x0',
+          gas: '0x5208',
+          gasPrice: '0x64',
+          input: '0x',
+          nonce: '0x0',
+          blockHash: '0x' + '0'.repeat(64),
+          blockNumber: '0x1',
+          transactionIndex: '0x0',
+        };
+
+      case 'eth_accounts':
+        return ['0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'];
+
+      case 'eth_syncing':
+        return false;
+
       // Block info
       case 'eth_getBlockByNumber':
         const blockNum = params[0] === 'latest' ? this.currentBlockHeight : BigInt(params[0]);
