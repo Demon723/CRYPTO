@@ -6,6 +6,11 @@ pragma solidity ^0.8.26;
  * @dev Governance system for LXON standalone blockchain - no ETH dependencies
  * Advisory-only governance with team control and technical council veto
  */
+interface IToken {
+    function totalSupply() external view returns (uint256);
+    function balanceOf(address account) external view returns (uint256);
+}
+
 contract LXONGovernance {
     // Token reference
     address public token;
@@ -143,7 +148,7 @@ contract LXONGovernance {
         require(proposal.forVotes > proposal.againstVotes, "Proposal did not pass");
         
         // Check quorum
-        uint256 totalSupply = LXONNativeToken(token).totalSupply();
+        uint256 totalSupply = IToken(token).totalSupply();
         uint256 totalVotes = proposal.forVotes + proposal.againstVotes + proposal.abstainVotes;
         require(totalVotes * 100 >= totalSupply * quorumThreshold, "Quorum not met");
         

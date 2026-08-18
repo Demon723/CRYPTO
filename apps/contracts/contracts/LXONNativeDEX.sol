@@ -204,7 +204,7 @@ contract LXONNativeDEX {
     
     // ========== PRICE FUNCTIONS ==========
     
-    function getAmountOut(uint256 amountIn, uint256 reserveIn, uint256 reserveOut) public pure returns (uint256) {
+    function getAmountOut(uint256 amountIn, uint256 reserveIn, uint256 reserveOut) public view returns (uint256) {
         require(amountIn > 0, "Amount must be greater than 0");
         require(reserveIn > 0 && reserveOut > 0, "Insufficient liquidity");
         
@@ -214,7 +214,7 @@ contract LXONNativeDEX {
         return amountOut;
     }
     
-    function getAmountIn(uint256 amountOut, uint256 reserveIn, uint256 reserveOut) public pure returns (uint256) {
+    function getAmountIn(uint256 amountOut, uint256 reserveIn, uint256 reserveOut) public view returns (uint256) {
         require(amountOut > 0, "Amount must be greater than 0");
         require(reserveIn > 0 && reserveOut > 0, "Insufficient liquidity");
         
@@ -261,7 +261,7 @@ contract LXONNativeDEX {
     
     // ========== HELPER FUNCTIONS ==========
     
-    function sqrt(uint256 x) pure returns (uint256) {
+    function sqrt(uint256 x) public pure returns (uint256) {
         if (x == 0) return 0;
         uint256 z = (x + 1) / 2;
         uint256 y = x;
@@ -272,7 +272,7 @@ contract LXONNativeDEX {
         return y;
     }
     
-    function min(uint256 a, uint256 b) pure returns (uint256) {
+    function min(uint256 a, uint256 b) public pure returns (uint256) {
         return a < b ? a : b;
     }
 }

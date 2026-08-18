@@ -198,7 +198,8 @@
       <p class="subtitle">Decentralized Exchange on LXON Blockchain</p>
       <div class="wallet-section">
         <button onclick="connectWallet()">Connect Wallet</button>
-        <button class="btn-secondary" onclick="addLXONChain()">Add LXON Chain</button>
+        <button class="btn-secondary" onclick="addLXONChain()">Add Network</button>
+        <button class="btn-secondary" onclick="addLXONToken()">Add LXON Token</button>
       </div>
       <div id="walletInfo"></div>
     </div>
@@ -263,16 +264,16 @@
   </div>
 
   <script>
-    // LXON Native Ecosystem Contracts (localhost deployment)
+    // LXON EVM-Compatible Contracts (supports MetaMask and standard wallets)
     const CONTRACTS = {
       LXON_TOKEN: '0x5FC8d32690cc91D4c39d9d3abcBD16989F875707',
       SWAP: '0x0165878A594ca255338adfa4d48449f69242Eb8F',
       RPC_URL: 'http://localhost:8545',
-      CHAIN_ID: 723,
-      CHAIN_NAME: 'LXON Mainnet',
+      CHAIN_ID: 31337,
+      CHAIN_NAME: 'Hardhat Local',
       NATIVE_CURRENCY: {
-        name: 'LXON',
-        symbol: 'XON',
+        name: 'Ether',
+        symbol: 'ETH',
         decimals: 18
       }
     };
@@ -361,7 +362,7 @@
         await window.ethereum.request({
           method: 'wallet_addEthereumChain',
           params: [{
-            chainId: '0x2d3', // 723 in hex
+            chainId: '0x7a69', // 31337 in hex (Hardhat Local)
             chainName: CONTRACTS.CHAIN_NAME,
             nativeCurrency: CONTRACTS.NATIVE_CURRENCY,
             rpcUrls: [CONTRACTS.RPC_URL],
@@ -379,10 +380,37 @@
       try {
         await window.ethereum.request({
           method: 'wallet_switchEthereumChain',
-          params: [{ chainId: '0x2d3' }],
+          params: [{ chainId: '0x7a69' }], // 31337 in hex
         });
       } catch (error) {
         console.log('Chain switch failed:', error);
+      }
+    }
+
+    async function addLXONToken() {
+      if (typeof window.ethereum === 'undefined') return;
+
+      try {
+        const tokenAddress = CONTRACTS.LXON_TOKEN;
+        const tokenSymbol = 'LXON';
+        const tokenDecimals = 18;
+        const tokenImage = 'https://lxon.network/logo.png'; // Replace with actual logo URL
+
+        await window.ethereum.request({
+          method: 'wallet_watchAsset',
+          params: {
+            type: 'ERC20',
+            options: {
+              address: tokenAddress,
+              symbol: tokenSymbol,
+              decimals: tokenDecimals,
+              image: tokenImage,
+            },
+          },
+        });
+        console.log('LXON token added to wallet');
+      } catch (error) {
+        console.log('Token add failed:', error);
       }
     }
 

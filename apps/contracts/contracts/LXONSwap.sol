@@ -165,7 +165,7 @@ contract LXONNativeSwap {
     
     // ========== PRICE FUNCTIONS ==========
     
-    function getAmountOut(uint256 amountIn, uint256 reserveIn, uint256 reserveOut) public pure returns (uint256) {
+    function getAmountOut(uint256 amountIn, uint256 reserveIn, uint256 reserveOut) public view returns (uint256) {
         require(amountIn > 0, "Amount must be greater than 0");
         require(reserveIn > 0 && reserveOut > 0, "Insufficient liquidity");
         
@@ -175,7 +175,7 @@ contract LXONNativeSwap {
         return amountOut;
     }
     
-    function getAmountIn(uint256 amountOut, uint256 reserveIn, uint256 reserveOut) public pure returns (uint256) {
+    function getAmountIn(uint256 amountOut, uint256 reserveIn, uint256 reserveOut) public view returns (uint256) {
         require(amountOut > 0, "Amount must be greater than 0");
         require(reserveIn > 0 && reserveOut > 0, "Insufficient liquidity");
         
