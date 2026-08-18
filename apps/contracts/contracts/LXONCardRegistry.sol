@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
+import "./LXONTOTPAuth.sol";
+
 /**
  * @title LXON Card Registry (Standalone Blockchain)
  * @dev Manages premium card numbers and cardholder identity verification
@@ -27,6 +29,9 @@ contract LXONCardRegistry {
     address public founder;
     uint256 public cardCount;
     
+    // TOTP authentication
+    LXONTOTPAuth public totpAuth;
+    
     // Card number format: H-XXXX-XXXX-XXXX-X (Amex-style)
     bytes1 private constant PREFIX = bytes1('H');
     
@@ -39,19 +44,26 @@ contract LXONCardRegistry {
         require(msg.sender == founder, "Not founder");
         _;
     }
+    
+    modifier withFounderTOTP(uint256 totpCode) {
+        require(totpAuth.verifyTOTP(founder, totpCode), "Invalid TOTP code");
+        _;
+    }
 
-    constructor() {
+    constructor(address _totpAuth) {
         founder = msg.sender;
+        totpAuth = LXONTOTPAuth(_totpAuth);
     }
 
     /**
-     * @notice Issue a new premium card (founder only)
+     * @notice Issue a new premium card (founder only with TOTP)
      * @param tokenId The associated token ID
      * @param nameHash Hash of cardholder name
      * @param kycHash Hash of KYC data
+     * @param totpCode The founder's TOTP code
      * @return cardNumber The new card number
      */
-    function issueCard(uint256 tokenId, bytes32 nameHash, bytes32 kycHash) external onlyFounder returns (string memory) {
+    function issueCard(uint256 tokenId, bytes32 nameHash, bytes32 kycHash, uint256 totpCode) external onlyFounder withFounderTOTP(totpCode) returns (string memory) {
         require(tokenId > 0, "Invalid token ID");
         require(bytes(cardNumberByTokenId[tokenId]).length == 0, "Card already exists for token");
         
@@ -74,22 +86,24 @@ contract LXONCardRegistry {
     }
 
     /**
-     * @notice Deactivate a card (founder only)
+     * @notice Deactivate a card (founder only with TOTP)
      * @param cardNumber The card number to deactivate
+     * @param totpCode The founder's TOTP code
      */
-    function deactivateCard(string memory cardNumber) external onlyFounder {
+    function deactivateCard(string memory cardNumber, uint256 totpCode) external onlyFounder withFounderTOTP(totpCode) {
         require(cards[cardNumber].active, "Card not active");
         cards[cardNumber].active = false;
         emit CardDeactivated(cardNumber);
     }
 
     /**
-     * @notice Update cardholder data (founder only)
+     * @notice Update cardholder data (founder only with TOTP)
      * @param cardNumber The card number
      * @param newNameHash New name hash
      * @param newKycHash New KYC hash
+     * @param totpCode The founder's TOTP code
      */
-    function updateCardholder(string memory cardNumber, bytes32 newNameHash, bytes32 newKycHash) external onlyFounder {
+    function updateCardholder(string memory cardNumber, bytes32 newNameHash, bytes32 newKycHash, uint256 totpCode) external onlyFounder withFounderTOTP(totpCode) {
         require(cards[cardNumber].active, "Card not active");
         cards[cardNumber].nameHash = newNameHash;
         cards[cardNumber].kycHash = newKycHash;

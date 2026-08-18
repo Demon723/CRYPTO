@@ -4,6 +4,7 @@ pragma solidity ^0.8.26;
 import "./LXONChipRegistry.sol";
 import "./LXONCardRegistry.sol";
 import "./LXONTBAccount.sol";
+import "./LXONTOTPAuth.sol";
 
 /**
  * @title LXON NFT (Standalone Blockchain)
@@ -31,6 +32,7 @@ contract LXONNFT {
     // Phygital Features
     LXONChipRegistry public chipRegistry;
     LXONCardRegistry public cardRegistry;
+    LXONTOTPAuth public totpAuth;
     
     // Token lifecycle states
     enum TokenStatus { INACTIVE, ACTIVE, FROZEN, DEACTIVATED }
@@ -103,13 +105,19 @@ contract LXONNFT {
         _;
     }
     
-    constructor(address _chipRegistry, address _cardRegistry) {
+    modifier withFounderTOTP(uint256 totpCode) {
+        require(totpAuth.verifyTOTP(founder, totpCode), "Invalid TOTP code");
+        _;
+    }
+    
+    constructor(address _chipRegistry, address _cardRegistry, address _totpAuth) {
         owner = msg.sender;
         founder = msg.sender;
         _tokenIdCounter = 1;
         
         chipRegistry = LXONChipRegistry(_chipRegistry);
         cardRegistry = LXONCardRegistry(_cardRegistry);
+        totpAuth = LXONTOTPAuth(_totpAuth);
     }
     
     // ========== ERC-721 FUNCTIONS ==========
@@ -212,11 +220,12 @@ contract LXONNFT {
     // ========== PHYGITAL FUNCTIONS ==========
     
     /**
-     * @notice Activate a token with chip binding (founder only)
+     * @notice Activate a token with chip binding (founder only with TOTP)
      * @param tokenId The token ID
      * @param chipId The chip ID to bind
+     * @param totpCode The founder's TOTP code
      */
-    function activateToken(uint256 tokenId, uint256 chipId) external onlyFounder {
+    function activateToken(uint256 tokenId, uint256 chipId, uint256 totpCode) external onlyFounder withFounderTOTP(totpCode) {
         require(tokenStatus[tokenId] == TokenStatus.INACTIVE, "Token already active");
         require(chipRegistry.isChipValid(chipId), "Invalid chip");
         require(tokenIdByChipId[chipId] == 0, "Chip already bound");
@@ -292,20 +301,22 @@ contract LXONNFT {
     }
     
     /**
-     * @notice Freeze a token (founder only)
+     * @notice Freeze a token (founder only with TOTP)
      * @param tokenId The token ID
+     * @param totpCode The founder's TOTP code
      */
-    function freezeToken(uint256 tokenId) external onlyFounder {
+    function freezeToken(uint256 tokenId, uint256 totpCode) external onlyFounder withFounderTOTP(totpCode) {
         require(tokenStatus[tokenId] == TokenStatus.ACTIVE, "Token not active");
         tokenStatus[tokenId] = TokenStatus.FROZEN;
         emit TokenFrozen(tokenId);
     }
     
     /**
-     * @notice Deactivate a token (founder only)
+     * @notice Deactivate a token (founder only with TOTP)
      * @param tokenId The token ID
+     * @param totpCode The founder's TOTP code
      */
-    function deactivateToken(uint256 tokenId) external onlyFounder {
+    function deactivateToken(uint256 tokenId, uint256 totpCode) external onlyFounder withFounderTOTP(totpCode) {
         require(tokenStatus[tokenId] != TokenStatus.DEACTIVATED, "Token already deactivated");
         
         tokenStatus[tokenId] = TokenStatus.DEACTIVATED;
@@ -327,11 +338,12 @@ contract LXONNFT {
     }
     
     /**
-     * @notice Update token metadata (founder only)
+     * @notice Update token metadata (founder only with TOTP)
      * @param tokenId The token ID
      * @param metadata New metadata
+     * @param totpCode The founder's TOTP code
      */
-    function updateTokenMetadata(uint256 tokenId, string memory metadata) external onlyFounder {
+    function updateTokenMetadata(uint256 tokenId, string memory metadata, uint256 totpCode) external onlyFounder withFounderTOTP(totpCode) {
         tokenMetadata[tokenId] = metadata;
     }
     

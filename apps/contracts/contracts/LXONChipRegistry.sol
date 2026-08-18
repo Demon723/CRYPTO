@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
+import "./LXONTOTPAuth.sol";
+
 /**
  * @title LXON Chip Registry (Standalone Blockchain)
  * @dev Root of trust for physical chip authentication in LXON standalone blockchain
@@ -25,6 +27,9 @@ contract LXONChipRegistry {
     address public founder;
     uint256 public chipCount;
     
+    // TOTP authentication
+    LXONTOTPAuth public totpAuth;
+    
     // Events
     event ChipMinted(uint256 indexed chipId, bytes32 publicKey, uint256 mintedAt);
     event ChipDeactivated(uint256 indexed chipId);
@@ -34,18 +39,25 @@ contract LXONChipRegistry {
         require(msg.sender == founder, "Not founder");
         _;
     }
+    
+    modifier withFounderTOTP(uint256 totpCode) {
+        require(totpAuth.verifyTOTP(founder, totpCode), "Invalid TOTP code");
+        _;
+    }
 
-    constructor() {
+    constructor(address _totpAuth) {
         founder = msg.sender;
+        totpAuth = LXONTOTPAuth(_totpAuth);
     }
 
     /**
-     * @notice Mint a new chip (founder only)
+     * @notice Mint a new chip (founder only with TOTP)
      * @param publicKey The chip's public key
      * @param metadata Optional metadata
+     * @param totpCode The founder's TOTP code
      * @return chipId The new chip ID
      */
-    function mintChip(bytes32 publicKey, bytes memory metadata) external onlyFounder returns (uint256) {
+    function mintChip(bytes32 publicKey, bytes memory metadata, uint256 totpCode) external onlyFounder withFounderTOTP(totpCode) returns (uint256) {
         require(publicKey != bytes32(0), "Invalid public key");
         require(chipIdByPublicKey[publicKey] == 0, "Chip already exists");
 
@@ -66,21 +78,23 @@ contract LXONChipRegistry {
     }
 
     /**
-     * @notice Deactivate a chip (founder only)
+     * @notice Deactivate a chip (founder only with TOTP)
      * @param chipId The chip ID to deactivate
+     * @param totpCode The founder's TOTP code
      */
-    function deactivateChip(uint256 chipId) external onlyFounder {
+    function deactivateChip(uint256 chipId, uint256 totpCode) external onlyFounder withFounderTOTP(totpCode) {
         require(chips[chipId].active, "Chip not active");
         chips[chipId].active = false;
         emit ChipDeactivated(chipId);
     }
 
     /**
-     * @notice Update chip metadata (founder only)
+     * @notice Update chip metadata (founder only with TOTP)
      * @param chipId The chip ID
      * @param metadata New metadata
+     * @param totpCode The founder's TOTP code
      */
-    function updateChipMetadata(uint256 chipId, bytes memory metadata) external onlyFounder {
+    function updateChipMetadata(uint256 chipId, bytes memory metadata, uint256 totpCode) external onlyFounder withFounderTOTP(totpCode) {
         require(chips[chipId].active, "Chip not active");
         chips[chipId].metadata = metadata;
         emit ChipMetadataUpdated(chipId, metadata);

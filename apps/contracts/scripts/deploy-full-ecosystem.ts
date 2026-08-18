@@ -7,10 +7,18 @@ async function main() {
   console.log('Deploying with account:', deployer.address);
   console.log('Account balance:', (await deployer.provider.getBalance(deployer.address)).toString(), '\n');
 
+  // Deploy LXON TOTP Auth
+  console.log('Deploying LXON TOTP Auth...');
+  const LXONTOTPAuth = await ethers.getContractFactory('LXONTOTPAuth');
+  const lxonTOTPAuth = await LXONTOTPAuth.deploy();
+  await lxonTOTPAuth.waitForDeployment();
+  const lxonTOTPAuthAddress = await lxonTOTPAuth.getAddress();
+  console.log('LXON TOTP Auth deployed to:', lxonTOTPAuthAddress, '\n');
+
   // Deploy LXON Chip Registry
   console.log('Deploying LXON Chip Registry...');
   const LXONChipRegistry = await ethers.getContractFactory('LXONChipRegistry');
-  const lxonChipRegistry = await LXONChipRegistry.deploy();
+  const lxonChipRegistry = await LXONChipRegistry.deploy(lxonTOTPAuthAddress);
   await lxonChipRegistry.waitForDeployment();
   const lxonChipRegistryAddress = await lxonChipRegistry.getAddress();
   console.log('LXON Chip Registry deployed to:', lxonChipRegistryAddress, '\n');
@@ -18,7 +26,7 @@ async function main() {
   // Deploy LXON Card Registry
   console.log('Deploying LXON Card Registry...');
   const LXONCardRegistry = await ethers.getContractFactory('LXONCardRegistry');
-  const lxonCardRegistry = await LXONCardRegistry.deploy();
+  const lxonCardRegistry = await LXONCardRegistry.deploy(lxonTOTPAuthAddress);
   await lxonCardRegistry.waitForDeployment();
   const lxonCardRegistryAddress = await lxonCardRegistry.getAddress();
   console.log('LXON Card Registry deployed to:', lxonCardRegistryAddress, '\n');
@@ -34,7 +42,7 @@ async function main() {
   // Deploy LXON NFT (for physical coins)
   console.log('Deploying LXON NFT...');
   const LXONNFT = await ethers.getContractFactory('LXONNFT');
-  const lxonNFT = await LXONNFT.deploy(lxonChipRegistryAddress, lxonCardRegistryAddress);
+  const lxonNFT = await LXONNFT.deploy(lxonChipRegistryAddress, lxonCardRegistryAddress, lxonTOTPAuthAddress);
   await lxonNFT.waitForDeployment();
   const lxonNFTAddress = await lxonNFT.getAddress();
   console.log('LXON NFT deployed to:', lxonNFTAddress, '\n');
@@ -82,9 +90,11 @@ async function main() {
 
   const chipFounder = await lxonChipRegistry.founder();
   const cardFounder = await lxonCardRegistry.founder();
+  const totpFounder = await lxonTOTPAuth.founder();
   
   console.log('Chip Registry founder:', chipFounder);
   console.log('Card Registry founder:', cardFounder);
+  console.log('TOTP Auth founder:', totpFounder);
 
   const govOwner = await lxonGovernance.owner();
   const councilSize = await lxonGovernance.councilSize();
@@ -103,7 +113,16 @@ async function main() {
   await lxonNativeToken.setMintAuthority(lxonGovernanceAddress);
   console.log('Governance set as mint authority for native token');
   
-  console.log('\n✓ Enhanced standalone blockchain with NFT support deployment complete!');
+  // Set up TOTP for founder
+  console.log('\nSetting up TOTP for founder...');
+  // Generate a random secret hash (in production, this would be generated securely)
+  const founderSecretHash = ethers.keccak256(ethers.toUtf8Bytes('founder-totp-secret-' + Date.now()));
+  await lxonTOTPAuth.setTOTPSecret(deployer.address, founderSecretHash);
+  console.log('TOTP secret set for founder');
+  console.log('Founder secret hash:', founderSecretHash);
+  console.log('IMPORTANT: Store this secret hash securely for Google Authenticator setup');
+  
+  console.log('\n✓ Enhanced standalone blockchain with NFT support and TOTP deployment complete!');
 
   // Save deployment addresses
   const deployment = {
@@ -111,6 +130,7 @@ async function main() {
     chainId: (await ethers.provider.getNetwork()).chainId.toString(),
     deployer: deployer.address,
     contracts: {
+      LXONTOTPAuth: lxonTOTPAuthAddress,
       LXONChipRegistry: lxonChipRegistryAddress,
       LXONCardRegistry: lxonCardRegistryAddress,
       LXONNativeToken: lxonNativeTokenAddress,
@@ -118,6 +138,7 @@ async function main() {
       LXONGovernance: lxonGovernanceAddress,
       LXONNativeDEX: lxonNativeDEXAddress
     },
+    founderSecretHash: founderSecretHash,
     timestamp: new Date().toISOString()
   };
 
@@ -128,6 +149,7 @@ async function main() {
   console.log('\nComplete ecosystem:');
   console.log('- LXON Native Token (XON) - Fungible currency for the blockchain');
   console.log('- LXON NFT - Non-fungible tokens representing physical coins');
+  console.log('- LXON TOTP Auth - Google Authenticator 2FA for founder operations');
   console.log('- Physical chip authentication (PBT-style)');
   console.log('- Premium card system with Amex-style card numbers');
   console.log('- Token Bound Accounts (smart contract wallets)');
@@ -135,6 +157,11 @@ async function main() {
   console.log('- Stellar evolution tier system');
   console.log('- Tap-to-pay functionality');
   console.log('- Native DEX for trading');
+  console.log('\nIMPORTANT SECURITY NOTES:');
+  console.log('- Founder operations now require TOTP (2FA)');
+  console.log('- Founder secret hash:', founderSecretHash);
+  console.log('- Use this hash to set up Google Authenticator');
+  console.log('- Critical operations: chip minting, token activation, freezing, deactivation');
 
   return deployment;
 }
