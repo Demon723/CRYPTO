@@ -112,7 +112,6 @@ contract LXONChipRegistry {
     /**
      * @notice Get chip data
      * @param chipId The chip ID
-     * @return publicKey, mintedAt, active, metadata
      */
     function getChipData(uint256 chipId) external view returns (
         bytes32 publicKey,

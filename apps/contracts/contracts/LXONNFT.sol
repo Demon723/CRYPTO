@@ -174,12 +174,12 @@ contract LXONNFT {
     }
     
     function approve(address to, uint256 tokenId) external whenNotPaused {
-        address owner = ownerOf[tokenId];
-        require(msg.sender == owner || isApprovedForAll[owner][msg.sender], "Not approved or owner");
-        require(to != owner, "Cannot approve to owner");
+        address tokenOwner = ownerOf[tokenId];
+        require(msg.sender == tokenOwner || isApprovedForAll[tokenOwner][msg.sender], "Not approved or owner");
+        require(to != tokenOwner, "Cannot approve to owner");
         
         getApproved[tokenId] = to;
-        emit Approval(owner, to, tokenId);
+        emit Approval(tokenOwner, to, tokenId);
     }
     
     function setApprovalForAll(address operator, bool approved) external whenNotPaused {
@@ -191,8 +191,8 @@ contract LXONNFT {
     // ========== VIEW FUNCTIONS ==========
     
     function _isApprovedOrOwner(address spender, uint256 tokenId) internal view returns (bool) {
-        address owner = ownerOf[tokenId];
-        return (spender == owner || getApproved[tokenId] == spender || isApprovedForAll[owner][spender]);
+        address tokenOwner = ownerOf[tokenId];
+        return (spender == tokenOwner || getApproved[tokenId] == spender || isApprovedForAll[tokenOwner][spender]);
     }
     
     function _isContract(address account) internal view returns (bool) {
@@ -242,12 +242,12 @@ contract LXONNFT {
      * @notice Bind a wallet to a token (chip signature required)
      * @param tokenId The token ID
      * @param wallet The wallet address
-     * @param signature The chip signature
+     * @param sig The chip signature
      */
-    function bindWallet(uint256 tokenId, address wallet, bytes memory signature) external whenTokenActive(tokenId) {
+    function bindWallet(uint256 tokenId, address wallet, bytes memory sig) external whenTokenActive(tokenId) {
         uint256 chipId = chipIdByTokenId[tokenId];
         require(chipId > 0, "No chip bound");
-        require(_verifyChipSignature(chipId, wallet, signature), "Invalid signature");
+        require(_verifyChipSignature(chipId, address(0), sig), "Invalid signature");
         require(boundWallet[tokenId] == address(0), "Wallet already bound");
         
         boundWallet[tokenId] = wallet;
@@ -375,16 +375,20 @@ contract LXONNFT {
         require(tbaByTokenId[tokenId] != address(0), "No TBA exists");
         
         LXONTBAccount tba = LXONTBAccount(tbaByTokenId[tokenId]);
-        (bool success, ) = tba.executeBatch(targets, values, calldatas);
-        require(success, "Execution failed");
+        (bool[] memory successes, ) = tba.executeBatch(targets, values, calldatas);
+        
+        // Check that all executions succeeded
+        for (uint256 i = 0; i < successes.length; i++) {
+            require(successes[i], "Execution failed");
+        }
     }
     
     // ========== HELPER FUNCTIONS ==========
     
-    function _verifyChipSignature(uint256 chipId, address wallet, bytes memory signature) internal view returns (bool) {
+    function _verifyChipSignature(uint256 chipId, address, bytes memory sig) internal view returns (bool) {
         // Simplified signature verification
         // In production, this would use proper ECDSA verification
-        return signature.length > 0;
+        return sig.length > 0;
     }
     
     // ========== ADMIN FUNCTIONS ==========
@@ -410,7 +414,7 @@ contract LXONNFT {
     // ========== VIEW FUNCTIONS ==========
     
     function getTokenInfo(uint256 tokenId) external view returns (
-        address owner,
+        address tokenOwner,
         TokenStatus status,
         uint256 chipId,
         address wallet,
@@ -421,7 +425,7 @@ contract LXONNFT {
         string memory uri,
         string memory metadata
     ) {
-        owner = ownerOf[tokenId];
+        tokenOwner = ownerOf[tokenId];
         status = tokenStatus[tokenId];
         chipId = chipIdByTokenId[tokenId];
         wallet = boundWallet[tokenId];

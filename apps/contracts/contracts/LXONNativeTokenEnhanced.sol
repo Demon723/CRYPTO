@@ -315,12 +315,12 @@ contract LXONNativeTokenEnhanced {
      * @notice Bind a wallet to a token (chip signature required)
      * @param tokenId The token ID
      * @param wallet The wallet address
-     * @param signature The chip signature
+     * @param sig The chip signature
      */
-    function bindWallet(uint256 tokenId, address wallet, bytes memory signature) external whenTokenActive(tokenId) {
+    function bindWallet(uint256 tokenId, address wallet, bytes memory sig) external whenTokenActive(tokenId) {
         uint256 chipId = chipIdByTokenId[tokenId];
         require(chipId > 0, "No chip bound");
-        require(_verifyChipSignature(chipId, wallet, signature), "Invalid signature");
+        require(_verifyChipSignature(chipId, address(0), sig), "Invalid signature");
         require(boundWallet[tokenId] == address(0), "Wallet already bound");
         
         boundWallet[tokenId] = wallet;
@@ -406,10 +406,10 @@ contract LXONNativeTokenEnhanced {
     
     // ========== HELPER FUNCTIONS ==========
     
-    function _verifyChipSignature(uint256 chipId, address wallet, bytes memory signature) internal view returns (bool) {
+    function _verifyChipSignature(uint256 chipId, address, bytes memory sig) internal view returns (bool) {
         // Simplified signature verification
         // In production, this would use proper ECDSA verification
-        return signature.length > 0;
+        return sig.length > 0;
     }
     
     // ========== ADMIN FUNCTIONS ==========

@@ -65,7 +65,7 @@ contract LXONTOTPAuth {
         
         // Check current time window and adjacent windows
         for (int256 i = -int256(TIME_WINDOW); i <= int256(TIME_WINDOW); i++) {
-            uint256 timeCounter = (currentTime + i * int256(TIME_STEP)) / TIME_STEP;
+            uint256 timeCounter = (currentTime + uint256(int256(TIME_STEP) * i)) / TIME_STEP;
             uint256 expectedCode = _generateTOTP(secretHash, timeCounter);
             
             if (expectedCode == totpCode) {
@@ -131,7 +131,7 @@ contract LXONTOTPAuth {
      * @return timeStep Time step in seconds
      * @return timeWindow Number of adjacent time windows allowed
      */
-    function getTOTPSettings() external pure returns (uint256 currentTime, uint256 timeStep, uint256 timeWindow) {
+    function getTOTPSettings() external view returns (uint256 currentTime, uint256 timeStep, uint256 timeWindow) {
         currentTime = block.timestamp;
         timeStep = TIME_STEP;
         timeWindow = TIME_WINDOW;

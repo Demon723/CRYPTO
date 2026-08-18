@@ -122,7 +122,6 @@ contract LXONCardRegistry {
     /**
      * @notice Get card data
      * @param cardNumber The card number
-     * @return cardNumber, nameHash, kycHash, issuedAt, active, tokenId
      */
     function getCardData(string memory cardNumber) external view returns (
         string memory cardNumber_,
@@ -165,8 +164,8 @@ contract LXONCardRegistry {
         uint256 digitIndex = 0;
         
         for (uint256 i = 0; i < cardBytes.length; i++) {
-            if (cardBytes[i] >= '0' && cardBytes[i] <= '9') {
-                digits[digitIndex] = uint256(cardBytes[i]) - uint256('0');
+            if (cardBytes[i] >= 0x30 && cardBytes[i] <= 0x39) { // '0' = 0x30, '9' = 0x39
+                digits[digitIndex] = uint256(uint8(cardBytes[i])) - 0x30;
                 digitIndex++;
             }
         }
@@ -226,7 +225,7 @@ contract LXONCardRegistry {
     function _toString(uint256 value, uint256 length) internal pure returns (string memory) {
         bytes memory buffer = new bytes(length);
         for (uint256 i = 0; i < length; i++) {
-            buffer[length - 1 - i] = bytes1(uint8('0' + (value % 10)));
+            buffer[length - 1 - i] = bytes1(uint8(0x30 + (value % 10))); // 0x30 = '0'
             value /= 10;
         }
         return string(buffer);
