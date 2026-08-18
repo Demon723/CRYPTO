@@ -1,757 +1,558 @@
-# Google Cloud Deployment Tutorial with Git Pull
+# LXON Sovereign Blockchain Deployment Guide - Google Cloud
 
-This tutorial guides you through deploying the LXON blockchain project to Google Cloud Platform (GCP) using git pull for continuous deployment.
+## 🚀 Overview
 
-## Table of Contents
+This guide will help you deploy the LXON blockchain as a sovereign network using Google Cloud Platform (GCP).
 
-1. [Prerequisites](#prerequisites)
-2. [Google Cloud Setup](#google-cloud-setup)
-3. [VM Instance Creation](#vm-instance-creation)
-4. [Environment Configuration](#environment-configuration)
-5. [Git Pull Deployment Setup](#git-pull-deployment-setup)
-6. [Automated Deployment](#automated-deployment)
-7. [Security Best Practices](#security-best-practices)
-8. [Monitoring and Maintenance](#monitoring-and-maintenance)
+## 📋 Prerequisites
 
----
+- Google Cloud account with billing enabled
+- Domain name (optional but recommended)
+- Basic knowledge of Docker and networking
+- At least $50-100/month budget for infrastructure
 
-## Prerequisites
+## 🏗️ Architecture
 
-### Required Accounts and Tools
+### Network Components
+1. **Validator Nodes** (3-5 nodes for consensus)
+2. **RPC Nodes** (2-3 nodes for public access)
+3. **Archive Nodes** (1-2 nodes for historical data)
+4. **Monitoring** (Prometheus + Grafana)
+5. **Load Balancer** (Google Cloud Load Balancer)
 
-- **Google Cloud Account** with billing enabled
-- **GitHub Account** with repository access
-- **SSH Key** for VM access
-- **Domain Name** (optional, for custom domain)
+### Server Requirements
+- **Validator Nodes**: n2-standard-4 (4 vCPU, 16GB RAM)
+- **RPC Nodes**: n2-standard-2 (2 vCPU, 8GB RAM)
+- **Archive Nodes**: n2-standard-8 (8 vCPU, 32GB RAM)
 
-### Local Machine Requirements
+## 📝 Step 1: Set Up Google Cloud Project
 
+### 1.1 Create Project
 ```bash
-# Install Google Cloud SDK
-curl https://sdk.cloud.google.com | bash
-exec -l $SHELL
-gcloud init
+# Create new GCP project
+gcloud projects create lxon-blockchain
 
-# Install required tools
-npm install -g pm2
-npm install -g hardhat
-```
-
----
-
-## Google Cloud Setup
-
-### 1. Create Google Cloud Project
-
-```bash
-# Create new project
-gcloud projects create lxon-blockchain --name="LXON Blockchain"
-
-# Set as active project
+# Set as default project
 gcloud config set project lxon-blockchain
 
 # Enable required APIs
 gcloud services enable compute.googleapis.com
+gcloud services enable container.googleapis.com
 gcloud services enable cloudresourcemanager.googleapis.com
 gcloud services enable iam.googleapis.com
 ```
 
-### 2. Create Service Account
-
+### 1.2 Configure Network
 ```bash
-# Create service account
-gcloud iam service-accounts create lxon-deployer \
-  --display-name="LXON Deployer" \
-  --description="Service account for LXON deployment"
+# Create VPC network
+gcloud compute networks create lxon-network \
+  --subnet-mode=custom
 
-# Grant Compute Admin role
-gcloud projects add-iam-policy-binding lxon-blockchain \
-  --member="serviceAccount:lxon-deployer@lxon-blockchain.iam.gserviceaccount.com" \
-  --role="roles/compute.admin"
+# Create subnet
+gcloud compute networks subnets create lxon-subnet \
+  --network=lxon-network \
+  --region=us-central1 \
+  --range=10.0.0.0/24
 
-# Create and download service account key
-gcloud iam service-accounts keys create lxon-deployer-key.json \
-  --iam-account=lxon-deployer@lxon-blockchain.iam.gserviceaccount.com
+# Create firewall rules
+gcloud compute firewall-rules create lxon-allow-p2p \
+  --network=lxon-network \
+  --allow=tcp:30303,udp:30303 \
+  --source-ranges=0.0.0.0/0
+
+gcloud compute firewall-rules create lxon-allow-rpc \
+  --network=lxon-network \
+  --allow=tcp:8545,8546 \
+  --source-ranges=0.0.0.0/0
+
+gcloud compute firewall-rules create lxon-allow-ssh \
+  --network=lxon-network \
+  --allow=tcp:22 \
+  --source-ranges=0.0.0.0/0
 ```
 
----
+## 📝 Step 2: Deploy Validator Nodes
 
-## VM Instance Creation
-
-### 1. Create VM Instance
-
+### 2.1 Create Validator Instance Template
 ```bash
-# Create VM with sufficient resources
-gcloud compute instances create lxon-node \
-  --zone=us-central1-a \
-  --machine-type=e2-medium \
+# Create instance template
+gcloud compute instance-templates create lxon-validator-template \
+  --machine-type=n2-standard-4 \
   --image-family=ubuntu-2204-lts \
   --image-project=ubuntu-os-cloud \
-  --boot-disk-size=50GB \
+  --boot-disk-size=100GB \
   --boot-disk-type=pd-ssd \
-  --network-interface=network-tier=PREMIUM \
-  --tags=http-server,https-server \
-  --metadata-from-file=startup-script=./gcp-startup-script.sh
+  --network=lxon-network \
+  --subnet=lxon-subnet \
+  --tags=lxon-validator \
+  --metadata-from-file=startup-script=./scripts/validator-setup.sh
 ```
 
-### 2. Configure Firewall Rules
-
+### 2.2 Create Validator Startup Script
 ```bash
-# Allow HTTP traffic
-gcloud compute firewall-rules create allow-http \
-  --allow tcp:80 \
-  --source-ranges 0.0.0.0/0 \
-  --target-tags http-server
-
-# Allow HTTPS traffic
-gcloud compute firewall-rules create allow-https \
-  --allow tcp:443 \
-  --source-ranges 0.0.0.0/0 \
-  --target-tags https-server
-
-# Allow SSH traffic
-gcloud compute firewall-rules create allow-ssh \
-  --allow tcp:22 \
-  --source-ranges 0.0.0.0/0 \
-  --target-tags ssh-server
-```
-
-### 3. Reserve Static IP (Optional)
-
-```bash
-# Reserve static IP address
-gcloud compute addresses create lxon-static-ip \
-  --region=us-central1
-
-# Get the IP address
-gcloud compute addresses describe lxon-static-ip --region=us-central1
-
-# Assign to VM
-gcloud compute instances add-access-config lxon-node \
-  --zone=us-central1-a \
-  --address lxon-static-ip \
-  --access-config-name external-nat
-```
-
----
-
-## Environment Configuration
-
-### 1. SSH into VM
-
-```bash
-# SSH into the VM
-gcloud compute ssh lxon-node --zone=us-central1-a
-
-# Or using external IP
-ssh user@YOUR_VM_EXTERNAL_IP
-```
-
-### 2. Install Dependencies
-
-```bash
-# Update system
-sudo apt update && sudo apt upgrade -y
-
-# Install Node.js and npm
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt install -y nodejs
-
-# Install Python and build tools
-sudo apt install -y python3 python3-pip build-essential git
-
-# Install PM2 for process management
-sudo npm install -g pm2
-
-# Install Hardhat
-sudo npm install -g hardhat
-
-# Install Nginx for reverse proxy
-sudo apt install -y nginx certbot python3-certbot-nginx
-```
-
-### 3. Configure Git
-
-```bash
-# Configure git user
-git config --global user.name "LXON Deployer"
-git config --global user.email "deployer@lxon.network"
-
-# Generate SSH key for GitHub
-ssh-keygen -t ed25519 -C "lxon-deployer@lxon.network"
-
-# Display public key (add to GitHub)
-cat ~/.ssh/id_ed25519.pub
-
-# Test GitHub connection
-ssh -T git@github.com
-```
-
-### 4. Clone Repository
-
-```bash
-# Create deployment directory
-mkdir -p /var/www/lxon
-cd /var/www/lxon
-
-# Clone repository
-git clone git@github.com:Demon723/CRYPTO.git .
-```
-
-### 5. Install Project Dependencies
-
-```bash
-# Navigate to contracts directory
-cd /var/www/lxon/apps/contracts
-
-# Install dependencies
-npm install
-
-# Compile contracts
-npx hardhat compile
-```
-
----
-
-## Git Pull Deployment Setup
-
-### 1. Create Deployment Script
-
-Create `/var/www/lxon/deploy.sh`:
-
-```bash
+# Create scripts/validator-setup.sh
+cat > scripts/validator-setup.sh << 'EOF'
 #!/bin/bash
 
-# LXON Deployment Script
-# This script pulls latest changes and restarts services
-
-set -e
-
-echo "=== Starting LXON Deployment ==="
-
-# Navigate to project directory
-cd /var/www/lxon
-
-# Pull latest changes
-echo "Pulling latest changes from GitHub..."
-git pull origin main
-
-# Navigate to contracts directory
-cd apps/contracts
+# Update system
+apt-get update && apt-get upgrade -y
 
 # Install dependencies
-echo "Installing dependencies..."
+apt-get install -y docker.io docker-compose git curl wget
+
+# Start Docker
+systemctl start docker
+systemctl enable docker
+
+# Create LXON directory
+mkdir -p /lxon
+cd /lxon
+
+# Clone LXON repository (replace with your repo)
+git clone https://github.com/Demon723/CRYPTO.git
+cd CRYPTO
+
+# Build LXON blockchain node
+cd apps/lxon-blockchain
 npm install
+npm run build
 
-# Compile contracts
-echo "Compiling contracts..."
-npx hardhat compile
+# Create systemd service
+cat > /etc/systemd/system/lxon-validator.service << 'SERVICE'
+[Unit]
+Description=LXON Validator Node
+After=network.target
 
-# Restart services with PM2
-echo "Restarting services..."
-pm2 restart lxon-node || pm2 start ecosystem.config.js
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/lxon/CRYPTO/apps/lxon-blockchain
+ExecStart=/usr/bin/node dist/index.js --validator
+Restart=always
+RestartSec=10
 
-# Save PM2 configuration
-pm2 save
+[Install]
+WantedBy=multi-user.target
+SERVICE
 
-echo "=== Deployment Complete ==="
+# Enable and start service
+systemctl enable lxon-validator
+systemctl start lxon-validator
+
+echo "LXON Validator Node deployed successfully"
+EOF
 ```
 
-Make it executable:
-
+### 2.3 Deploy Validator Nodes
 ```bash
-chmod +x /var/www/lxon/deploy.sh
+# Create instance group
+gcloud compute instance-groups managed create lxon-validators \
+  --base-instance-name=lxon-validator \
+  --template=lxon-validator-template \
+  --size=3 \
+  --region=us-central1
+
+# Wait for instances to be ready
+gcloud compute instance-groups managed wait-until-stable lxon-validators \
+  --region=us-central1
 ```
 
-### 2. Create PM2 Configuration
+## 📝 Step 3: Deploy RPC Nodes
 
-Create `/var/www/lxon/apps/contracts/ecosystem.config.js`:
+### 3.1 Create RPC Instance Template
+```bash
+gcloud compute instance-templates create lxon-rpc-template \
+  --machine-type=n2-standard-2 \
+  --image-family=ubuntu-2204-lts \
+  --image-project=ubuntu-os-cloud \
+  --boot-disk-size=200GB \
+  --boot-disk-type=pd-ssd \
+  --network=lxon-network \
+  --subnet=lxon-subnet \
+  --tags=lxon-rpc \
+  --metadata-from-file=startup-script=./scripts/rpc-setup.sh
+```
 
-```javascript
-module.exports = {
-  apps: [
-    {
-      name: 'lxon-node',
-      script: './scripts/run-local-node.js',
-      cwd: '/var/www/lxon/apps/contracts',
-      instances: 1,
-      autorestart: true,
-      watch: false,
-      max_memory_restart: '1G',
-      env: {
-        NODE_ENV: 'production',
-        PORT: 8545,
+### 3.2 Create RPC Startup Script
+```bash
+cat > scripts/rpc-setup.sh << 'EOF'
+#!/bin/bash
+
+# Update system
+apt-get update && apt-get upgrade -y
+
+# Install dependencies
+apt-get install -y docker.io docker-compose git curl wget nginx
+
+# Start Docker
+systemctl start docker
+systemctl enable docker
+
+# Create LXON directory
+mkdir -p /lxon
+cd /lxon
+
+# Clone LXON repository
+git clone https://github.com/Demon723/CRYPTO.git
+cd CRYPTO
+
+# Build LXON blockchain node
+cd apps/lxon-blockchain
+npm install
+npm run build
+
+# Create systemd service
+cat > /etc/systemd/system/lxon-rpc.service << 'SERVICE'
+[Unit]
+Description=LXON RPC Node
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/lxon/CRYPTO/apps/lxon-blockchain
+ExecStart=/usr/bin/node dist/index.js --rpc --rpc-port=8545
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+SERVICE
+
+# Enable and start service
+systemctl enable lxon-rpc
+systemctl start lxon-rpc
+
+# Configure Nginx reverse proxy
+cat > /etc/nginx/sites-available/lxon-rpc << 'NGINX'
+server {
+    listen 80;
+    server_name _;
+
+    location / {
+        proxy_pass http://localhost:8545;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+NGINX
+
+# Enable Nginx site
+ln -s /etc/nginx/sites-available/lxon-rpc /etc/nginx/sites-enabled/
+rm /etc/nginx/sites-enabled/default
+nginx -t
+systemctl restart nginx
+
+echo "LXON RPC Node deployed successfully"
+EOF
+```
+
+### 3.3 Deploy RPC Nodes
+```bash
+# Create instance group
+gcloud compute instance-groups managed create lxon-rpcs \
+  --base-instance-name=lxon-rpc \
+  --template=lxon-rpc-template \
+  --size=2 \
+  --region=us-central1
+
+# Wait for instances to be ready
+gcloud compute instance-groups managed wait-until-stable lxon-rpcs \
+  --region=us-central1
+```
+
+## 📝 Step 4: Set Up Load Balancer
+
+### 4.1 Create Load Balancer
+```bash
+# Create health check
+gcloud compute health-checks create http lxon-rpc-health \
+  --port=8545 \
+  --request-path=/health
+
+# Create backend service
+gcloud compute backend-services create lxon-rpc-backend \
+  --health-checks=lxon-rpc-health \
+  --global
+
+# Add instance group to backend
+gcloud compute backend-services add-backend lxon-rpc-backend \
+  --instance-group=lxon-rpcs \
+  --instance-group-region=us-central1 \
+  --global
+
+# Create URL map
+gcloud compute url-maps create lxon-rpc-lb \
+  --default-service=lxon-rpc-backend
+
+# Create forwarding rule
+gcloud compute forwarding-rules create lxon-rpc-forwarding \
+  --global \
+  --ports=80 \
+  --url-map=lxon-rpc-lb
+```
+
+### 4.2 Get Load Balancer IP
+```bash
+# Get external IP
+gcloud compute forwarding-rules describe lxon-rpc-forwarding \
+  --global \
+  --format="value(IPAddress)"
+```
+
+## 📝 Step 5: Deploy Smart Contracts
+
+### 5.1 Update Hardhat Config
+```typescript
+// Update hardhat.config.ts
+const config: HardhatUserConfig = {
+  solidity: {
+    version: '0.8.26',
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200
       },
-    },
-    {
-      name: 'lxon-api',
-      script: './scripts/run-api-server.js',
-      cwd: '/var/www/lxon/apps/contracts',
-      instances: 1,
-      autorestart: true,
-      watch: false,
-      max_memory_restart: '500M',
-      env: {
-        NODE_ENV: 'production',
-        PORT: 3000,
-      },
-    },
-  ],
+      evmVersion: 'cancun'
+    }
+  },
+  networks: {
+    lxonMainnet: {
+      url: 'https://YOUR_LOAD_BALANCER_IP', // Replace with your LB IP
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 723 // Your custom chain ID
+    }
+  },
+  // ... rest of config
 };
 ```
 
-### 3. Create Local Node Script
+### 5.2 Deploy Contracts
+```bash
+# Set environment variables
+export PRIVATE_KEY="your_private_key"
 
-Create `/var/www/lxon/apps/contracts/scripts/run-local-node.js`:
-
-```javascript
-const { spawn } = require('child_process');
-
-console.log('Starting LXON local node...');
-
-const hardhat = spawn('npx', ['hardhat', 'node', '--hostname', '0.0.0.0', '--port', '8545'], {
-  cwd: __dirname,
-  stdio: 'inherit',
-});
-
-hardhat.on('error', (error) => {
-  console.error('Failed to start node:', error);
-  process.exit(1);
-});
-
-hardhat.on('close', (code) => {
-  console.log(`Node process exited with code ${code}`);
-  process.exit(code);
-});
+# Deploy to your sovereign chain
+npx hardhat run scripts/deploy-minimal.ts --network lxonMainnet
 ```
 
----
+## 📝 Step 6: Set Up Block Explorer
 
-## Automated Deployment
-
-### Option 1: GitHub Webhook
-
-#### 1. Install Webhook Receiver
-
+### 6.1 Deploy Block Explorer
 ```bash
-# Install webhook handler
-npm install -g webhook
-
-# Create webhook configuration
-cat > /var/www/lxon/webhook-config.json << EOF
-[
-  {
-    "id": "lxon-deploy",
-    "execute-command": "/var/www/lxon/deploy.sh",
-    "command-working-directory": "/var/www/lxon",
-    "response-message": "Deployment triggered",
-    "trigger-rule": {
-      "match": {
-        "type": "payload-hash-sha1",
-        "secret": "YOUR_WEBHOOK_SECRET",
-        "parameter": {
-          "source": "header",
-          "name": "X-Hub-Signature"
-        }
-      }
-    }
-  }
-]
-EOF
-
-# Start webhook service
-pm2 start webhook -- --port 9000 --hooks /var/www/lxon/webhook-config.json
-pm2 save
-```
-
-#### 2. Configure GitHub Webhook
-
-1. Go to your GitHub repository
-2. Navigate to Settings → Webhooks
-3. Click "Add webhook"
-4. Set Payload URL: `http://YOUR_VM_IP:9000/hooks/lxon-deploy`
-5. Set Secret: `YOUR_WEBHOOK_SECRET`
-6. Select "Just the push event"
-7. Click "Add webhook"
-
-#### 3. Setup Nginx Reverse Proxy
-
-```bash
-# Create Nginx configuration
-cat > /etc/nginx/sites-available/lxon << EOF
-server {
-    listen 80;
-    server_name your-domain.com;
-
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_cache_bypass \$http_upgrade;
-    }
-
-    location /webhook {
-        proxy_pass http://localhost:9000;
-        proxy_http_version 1.1;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-    }
-}
-EOF
-
-# Enable site
-sudo ln -s /etc/nginx/sites-available/lxon /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl restart nginx
-```
-
-### Option 2: Cron Job (Simple)
-
-```bash
-# Add cron job for periodic deployment
-crontab -e
-
-# Add this line (runs every 5 minutes)
-*/5 * * * * cd /var/www/lxon && git pull origin main && ./deploy.sh >> /var/log/lxon-deploy.log 2>&1
-```
-
-### Option 3: Manual Deployment
-
-```bash
-# SSH into VM
-gcloud compute ssh lxon-node --zone=us-central1-a
-
-# Run deployment script
-cd /var/www/lxon
-./deploy.sh
-```
-
----
-
-## Security Best Practices
-
-### 1. SSH Key Management
-
-```bash
-# Disable password authentication
-sudo sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
-sudo systemctl restart sshd
-
-# Use SSH keys only
-# Add your public SSH key to ~/.ssh/authorized_keys
-```
-
-### 2. Firewall Configuration
-
-```bash
-# Only allow necessary ports
-sudo ufw default deny incoming
-sudo ufw default allow outgoing
-sudo ufw allow ssh
-sudo ufw allow http
-sudo ufw allow https
-sudo ufw enable
-```
-
-### 3. Environment Variables
-
-```bash
-# Create .env file
-cat > /var/www/lxon/apps/contracts/.env << EOF
-PRIVATE_KEY=your_private_key_here
-RPC_URL=https://your-rpc-url.com
-DATABASE_URL=your_database_url
-WEBHOOK_SECRET=your_webhook_secret
-EOF
-
-# Set proper permissions
-chmod 600 /var/www/lxon/apps/contracts/.env
-```
-
-### 4. SSL Certificate
-
-```bash
-# Obtain SSL certificate
-sudo certbot --nginx -d your-domain.com
-
-# Auto-renewal is configured automatically
-sudo certbot renew --dry-run
-```
-
-### 5. Regular Updates
-
-```bash
-# Create update script
-cat > /var/www/lxon/update-system.sh << EOF
-#!/bin/bash
-sudo apt update && sudo apt upgrade -y
-sudo npm update -g
-cd /var/www/lxon/apps/contracts
-npm update
-EOF
-
-chmod +x /var/www/lxon/update-system.sh
-
-# Add to cron (weekly)
-crontab -e
-# Add: 0 0 * * 0 /var/www/lxon/update-system.sh >> /var/log/system-update.log 2>&1
-```
-
----
-
-## Monitoring and Maintenance
-
-### 1. PM2 Monitoring
-
-```bash
-# Monitor processes
-pm2 monit
-
-# View logs
-pm2 logs lxon-node
-pm2 logs lxon-api
-
-# View status
-pm2 status
-```
-
-### 2. Log Management
-
-```bash
-# Create log rotation config
-cat > /etc/logrotate.d/lxon << EOF
-/var/log/lxon-deploy.log {
-    daily
-    rotate 7
-    compress
-    missingok
-    notifempty
-    create 0640 www-data www-data
-}
-EOF
-```
-
-### 3. Health Check Script
-
-Create `/var/www/lxon/health-check.sh`:
-
-```bash
-#!/bin/bash
-
-# Health check for LXON services
-
-echo "=== LXON Health Check ==="
-
-# Check if node is running
-if pm2 describe lxon-node > /dev/null 2>&1; then
-    echo "✅ LXON Node: Running"
-else
-    echo "❌ LXON Node: Not Running"
-    pm2 restart lxon-node
-fi
-
-# Check if API is running
-if pm2 describe lxon-api > /dev/null 2>&1; then
-    echo "✅ LXON API: Running"
-else
-    echo "❌ LXON API: Not Running"
-    pm2 restart lxon-api
-fi
-
-# Check disk space
-DISK_USAGE=$(df -h / | awk 'NR==2 {print $5}' | sed 's/%//')
-if [ $DISK_USAGE -gt 80 ]; then
-    echo "⚠️  Disk Usage: ${DISK_USAGE}% (High)"
-else
-    echo "✅ Disk Usage: ${DISK_USAGE}%"
-fi
-
-# Check memory
-MEM_USAGE=$(free | grep Mem | awk '{printf "%.0f", $3/$2 * 100}')
-echo "Memory Usage: ${MEM_USAGE}%"
-
-echo "=== Health Check Complete ==="
-```
-
-Add to cron:
-
-```bash
-crontab -e
-# Add: */10 * * * * /var/www/lxon/health-check.sh >> /var/log/health-check.log 2>&1
-```
-
-### 4. Backup Strategy
-
-```bash
-# Create backup script
-cat > /var/www/lxon/backup.sh << EOF
-#!/bin/bash
-
-BACKUP_DIR="/var/backups/lxon"
-DATE=\$(date +%Y%m%d_%H%M%S)
-
-mkdir -p \$BACKUP_DIR
-
-# Backup database
-# pg_dump lxon_db > \$BACKUP_DIR/lxon_db_\$DATE.sql
-
-# Backup configuration
-tar -czf \$BACKUP_DIR/lxon_config_\$DATE.tar.gz /var/www/lxon/apps/contracts/.env
-
-# Keep last 7 days of backups
-find \$BACKUP_DIR -name "lxon_*" -mtime +7 -delete
-
-echo "Backup completed: \$DATE"
-EOF
-
-chmod +x /var/www/lxon/backup.sh
-
-# Add to cron (daily)
-crontab -e
-# Add: 0 2 * * * /var/www/lxon/backup.sh >> /var/log/backup.log 2>&1
-```
-
----
-
-## Troubleshooting
-
-### Common Issues
-
-#### 1. Git Pull Fails
-
-```bash
-# Check git remote
-git remote -v
-
-# Update remote URL
-git remote set-url origin git@github.com:Demon723/CRYPTO.git
-
-# Check SSH key
-ssh -T git@github.com
-```
-
-#### 2. PM2 Services Won't Start
-
-```bash
-# Check PM2 logs
-pm2 logs
-
-# Check port availability
-sudo netstat -tlnp | grep 8545
-
-# Kill process using port
-sudo fuser -k 8545/tcp
-```
-
-#### 3. Nginx 502 Bad Gateway
-
-```bash
-# Check if backend is running
-pm2 status
-
-# Check Nginx error logs
-sudo tail -f /var/log/nginx/error.log
-
-# Restart Nginx
-sudo systemctl restart nginx
-```
-
-#### 4. Out of Memory
-
-```bash
-# Check memory usage
-free -h
-
-# Add swap space
-sudo fallocate -l 2G /swapfile
-sudo chmod 600 /swapfile
-sudo mkswap /swapfile
-sudo swapon /swapfile
-echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
-```
-
----
-
-## Cost Optimization
-
-### 1. Use Preemptible VMs
-
-```bash
-# Create preemptible VM (cheaper but can be terminated)
-gcloud compute instances create lxon-node-preemptible \
-  --zone=us-central1-a \
-  --machine-type=e2-medium \
-  --preemptible \
+# Create block explorer instance
+gcloud compute instances create lxon-explorer \
+  --machine-type=n2-standard-2 \
   --image-family=ubuntu-2204-lts \
-  --image-project=ubuntu-os-cloud
+  --image-project=ubuntu-os-cloud \
+  --boot-disk-size=50GB \
+  --network=lxon-network \
+  --subnet=lxon-subnet \
+  --tags=lxon-explorer
+
+# SSH into instance
+gcloud compute ssh lxon-explorer
+
+# Install block explorer (using Blockscout)
+git clone https://github.com/blockscout/blockscout
+cd blockscout
+docker-compose up -d
 ```
 
-### 2. Use Spot Instances
-
+### 6.2 Configure Explorer
 ```bash
-# Configure spot instance in deployment script
-gcloud compute instances create lxon-spot \
-  --zone=us-central1-a \
-  --machine-type=e2-medium \
-  --provisioning-model=SPOT \
-  --instance-termination-action=STOP
+# Update configuration
+cd explorer/config
+cp config.toml.example config.toml
+
+# Edit config.toml with your RPC endpoint
+# Set database credentials
+# Configure explorer settings
 ```
 
-### 3. Auto-scale Based on Load
+## 📝 Step 7: Add Liquidity
 
+### 7.1 Deploy Liquidity Contract
+```typescript
+// Create scripts/add-liquidity.ts
+import { ethers } from 'hardhat';
+
+async function main() {
+  const [deployer] = await ethers.getSigners();
+  
+  const lxonToken = await ethers.getContractAt('LXONNativeToken', TOKEN_ADDRESS);
+  const lxonDEX = await ethers.getContractAt('LXONNativeDEX', DEX_ADDRESS);
+  
+  // Mint tokens for liquidity
+  const liquidityAmount = ethers.parseEther('1000000'); // 1M XON
+  await lxonToken.mint(deployer.address, liquidityAmount);
+  
+  // Approve DEX
+  await lxonToken.approve(DEX_ADDRESS, liquidityAmount);
+  
+  // Add liquidity
+  await lxonDEX.addLiquidity(liquidityAmount);
+  
+  console.log('Liquidity added successfully');
+}
+
+main();
+```
+
+### 7.2 Execute Liquidity Addition
 ```bash
-# Create instance template
-gcloud compute instance-templates create lxon-template \
-  --machine-type=e2-medium \
+npx hardhat run scripts/add-liquidity.ts --network lxonMainnet
+```
+
+## 📝 Step 8: Set Up Public RPC Access
+
+### 8.1 Configure Domain (Optional)
+```bash
+# If you have a domain, configure DNS
+# Add A record pointing to load balancer IP
+# rpc.lxon.network -> YOUR_LOAD_BALANCER_IP
+```
+
+### 8.2 Test RPC Access
+```bash
+# Test RPC endpoint
+curl -X POST \
+  https://YOUR_LOAD_BALANCER_IP \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "jsonrpc":"2.0",
+    "method":"eth_blockNumber",
+    "params":[],
+    "id":1
+  }'
+```
+
+## 📝 Step 9: Set Up Monitoring
+
+### 9.1 Deploy Monitoring Stack
+```bash
+# Create monitoring instance
+gcloud compute instances create lxon-monitoring \
+  --machine-type=n2-standard-2 \
   --image-family=ubuntu-2204-lts \
-  --image-project=ubuntu-os-cloud
+  --image-project=ubuntu-os-cloud \
+  --boot-disk-size=100GB \
+  --network=lxon-network \
+  --subnet=lxon-subnet
 
-# Create instance group
-gcloud compute instance-groups managed create lxon-group \
-  --zone=us-central1-a \
-  --size=2 \
-  --template=lxon-template
+# SSH into instance
+gcloud compute ssh lxon-monitoring
 
-# Configure auto-scaling
-gcloud compute instance-groups managed set-autoscaling lxon-group \
-  --zone=us-central1-a \
-  --max-num-instances=5 \
-  --min-num-instances=1 \
-  --target-cpu-utilization=0.6
+# Install Prometheus and Grafana
+docker run -d \
+  --name prometheus \
+  -p 9090:9090 \
+  -v /prometheus-data:/prometheus \
+  prom/prometheus
+
+docker run -d \
+  --name grafana \
+  -p 3000:3000 \
+  -v /grafana-data:/var/lib/grafana \
+  grafana/grafana
 ```
 
----
+## 📝 Step 10: Apply for Exchange Listings
 
-## Summary
+### 10.1 Prepare Listing Application
+```typescript
+// Create listing information
+const listingInfo = {
+  projectName: "LXON",
+  tokenSymbol: "XON",
+  tokenAddress: "YOUR_TOKEN_ADDRESS",
+  chainId: 723,
+  rpcUrl: "https://rpc.lxon.network",
+  explorerUrl: "https://explorer.lxon.network",
+  totalSupply: "1000000000000000000000000000", // 1 billion
+  circulatingSupply: "100000000000000000000000000", // 100 million
+  website: "https://lxon.network",
+  whitepaper: "https://lxon.network/whitepaper.pdf",
+  socialLinks: {
+    twitter: "https://twitter.com/lxon_network",
+    discord: "https://discord.gg/lxon",
+    telegram: "https://t.me/lxon_network"
+  },
+  team: [
+    {
+      name: "Founder Name",
+      role: "CEO",
+      linkedin: "https://linkedin.com/in/..."
+    }
+  ],
+  auditReports: [
+    "https://lxon.network/audit-report.pdf"
+  ]
+};
+```
 
-Your LXON blockchain is now deployed on Google Cloud with automated git pull deployment:
+### 10.2 Apply to Exchanges
+```bash
+# Tier 3 Exchanges (easiest)
+- MEXC: https://www.mexc.com/cex/assets/listing/apply
+- Bitrue: https://www.bitrue.com/asset/applylisting
+- CoinEx: https://www.coinex.com/coin/listing
 
-**Deployment Flow:**
-1. Push changes to GitHub
-2. Webhook triggers deployment script
-3. Script pulls latest changes
-4. Dependencies installed and compiled
-5. Services restarted with PM2
-6. Nginx serves the application
+# Tier 2 Exchanges (medium difficulty)
+- KuCoin: https://www.kucoin.com/listing-application
+- Gate.io: https://www.gate.io/listing-application
+- Bybit: https://bybit.com/listing-application
 
-**Next Steps:**
-- Monitor logs regularly
-- Set up alerts for failures
-- Configure custom domain
-- Enable SSL certificate
-- Set up monitoring dashboard
-- Implement CI/CD pipeline
+# Tier 1 Exchanges (hardest)
+- Binance: https://www.binance.com/en/listing-application
+- Coinbase: https://www.coinbase.com/asset-hub/add
+- Kraken: https://support.kraken.com/hc/en-us/requests/new
+```
 
-**Support:**
+## 📊 Cost Summary
+
+### Monthly Costs
+- Validator Nodes (3x n2-standard-4): ~$300/month
+- RPC Nodes (2x n2-standard-2): ~$100/month
+- Archive Node (1x n2-standard-8): ~$200/month
+- Load Balancer: ~$50/month
+- Block Explorer: ~$100/month
+- Monitoring: ~$50/month
+- Storage: ~$50/month
+
+**Total: ~$850/month**
+
+### Initial Setup Costs
+- Security Audits: $50,000 - $200,000
+- Initial Liquidity: $10,000 - $100,000
+- Exchange Listing Fees: $10,000 - $500,000
+- Legal Compliance: $20,000 - $100,000
+- Marketing: $50,000 - $500,000
+
+**Total Initial: $140,000 - $1,400,000**
+
+## 🎯 Next Steps
+
+1. **Set up Google Cloud account** and create project
+2. **Deploy validator nodes** using the scripts above
+3. **Deploy RPC nodes** with load balancer
+4. **Deploy smart contracts** to your sovereign chain
+5. **Add initial liquidity** to the DEX
+6. **Set up block explorer** for transparency
+7. **Configure public RPC access**
+8. **Apply for exchange listings**
+9. **Build community** and awareness
+10. **Monitor and scale** as needed
+
+## 📞 Support
+
+For help with deployment:
 - Google Cloud Documentation: https://cloud.google.com/docs
-- PM2 Documentation: https://pm2.keymetrics.io/docs
-- Hardhat Documentation: https://hardhat.org/docs
-
----
-
-**Status:** Ready for production deployment on Google Cloud Platform! ☁️
+- LXON Documentation: https://github.com/Demon723/CRYPTO
+- Discord Community: https://discord.gg/lxon

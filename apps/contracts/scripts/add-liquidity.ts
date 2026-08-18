@@ -1,91 +1,61 @@
 import { ethers } from 'hardhat';
 
 async function main() {
-  console.log('Adding liquidity to SimpleSwap AMM...');
-  
-  // Use the owner account from private key
-  const privateKey = process.env.PRIVATE_KEY;
-  if (!privateKey) {
-    console.error('PRIVATE_KEY environment variable not set');
-    console.log('Please set PRIVATE_KEY in your .env file');
-    process.exit(1);
-  }
-  
-  const owner = new ethers.Wallet(privateKey, ethers.provider);
-  console.log('Adding liquidity with owner account:', owner.address);
-  console.log('Account balance:', ethers.formatEther(await ethers.provider.getBalance(owner.address)));
+  console.log('Adding liquidity to LXON Native DEX...\n');
+
+  const [deployer] = await ethers.getSigners();
+  console.log('Adding liquidity with account:', deployer.address);
+  console.log('Account balance:', (await deployer.provider.getBalance(deployer.address)).toString(), '\n');
 
   try {
-    // Get the deployed SimpleSwap contract address
-    const fs = require('fs');
-    const network = await ethers.provider.getNetwork();
-    const deploymentFile = `./deployments/${Number(network.chainId)}-swap.json`;
-    
-    if (!fs.existsSync(deploymentFile)) {
-      console.error('AMM deployment file not found. Please deploy AMM first.');
-      console.log('Run: npx hardhat run scripts/deploy-swap-production.ts --network localhost');
-      process.exit(1);
-    }
-    
-    const deploymentInfo = JSON.parse(fs.readFileSync(deploymentFile, 'utf8'));
-    const swapAddress = deploymentInfo.contracts.SimpleSwap;
-    const lxonTokenAddress = deploymentInfo.contracts.LXON;
-    
-    console.log('SimpleSwap address:', swapAddress);
-    console.log('LXON token address:', lxonTokenAddress);
+    // Get deployed contract addresses from deployment.json or use hardcoded addresses
+    const TOKEN_ADDRESS = process.env.LXON_TOKEN_ADDRESS || 'YOUR_TOKEN_ADDRESS';
+    const DEX_ADDRESS = process.env.LXON_DEX_ADDRESS || 'YOUR_DEX_ADDRESS';
 
-    // Get contract instances
-    const swap = await ethers.getContractAt('SimpleSwap', swapAddress, owner);
-    const lxonToken = await ethers.getContractAt('LXON', lxonTokenAddress, owner);
+    console.log('Connecting to contracts...');
+    const lxonToken = await ethers.getContractAt('LXONNativeToken', TOKEN_ADDRESS);
+    const lxonDEX = await ethers.getContractAt('LXONNativeDEX', DEX_ADDRESS);
+
+    // Check if deployer has enough tokens
+    const deployerBalance = await lxonToken.balanceOf(deployer.address);
+    console.log('Current token balance:', ethers.formatEther(deployerBalance), 'XON');
+
+    // Determine liquidity amount (adjust as needed)
+    const liquidityAmount = ethers.parseEther('1000000'); // 1M XON
     
-    // Check current reserves
-    const [reserveLXON, reserveNative] = await swap.getReserves();
-    console.log('\nCurrent reserves:');
-    console.log('LXON:', ethers.formatEther(reserveLXON));
-    console.log('Native:', ethers.formatEther(reserveNative));
-    
-    // Define liquidity amounts (adjust these values as needed)
-    const lxonAmount = ethers.parseEther('10000'); // 10,000 LXON
-    const nativeAmount = ethers.parseEther('1'); // 1 native token
-    
-    console.log('\nAdding liquidity:');
-    console.log('LXON amount:', ethers.formatEther(lxonAmount));
-    console.log('Native amount:', ethers.formatEther(nativeAmount));
-    
-    // Check if owner has enough LXON tokens
-    const lxonBalance = await lxonToken.balanceOf(owner.address);
-    console.log('Owner LXON balance:', ethers.formatEther(lxonBalance));
-    
-    if (lxonBalance < lxonAmount) {
-      console.error('Insufficient LXON tokens. Need:', ethers.formatEther(lxonAmount), 'Have:', ethers.formatEther(lxonBalance));
-      console.log('Please mint or transfer LXON tokens to the owner account first.');
-      process.exit(1);
+    if (deployerBalance < liquidityAmount) {
+      console.log('Minting additional tokens for liquidity...');
+      await lxonToken.mint(deployer.address, liquidityAmount - deployerBalance);
+      console.log('Minted:', ethers.formatEther(liquidityAmount - deployerBalance), 'XON');
     }
-    
-    // Approve LXON tokens for the swap contract
-    console.log('\nApproving LXON tokens...');
-    const approveTx = await lxonToken.approve(swapAddress, lxonAmount);
-    await approveTx.wait();
-    console.log('LXON tokens approved');
-    
-    // Add liquidity
-    console.log('\nAdding liquidity to AMM...');
-    const addLiquidityTx = await swap.addLiquidity(lxonAmount, nativeAmount, { value: nativeAmount });
-    await addLiquidityTx.wait();
+
+    // Approve DEX to spend tokens
+    console.log('Approving DEX to spend tokens...');
+    await lxonToken.approve(DEX_ADDRESS, liquidityAmount);
+    console.log('Approved:', ethers.formatEther(liquidityAmount), 'XON');
+
+    // Add liquidity to DEX
+    console.log('Adding liquidity to DEX...');
+    const tx = await lxonDEX.addLiquidity(liquidityAmount);
+    await tx.wait();
     console.log('Liquidity added successfully!');
-    
-    // Check new reserves
-    const [newReserveLXON, newReserveNative] = await swap.getReserves();
-    console.log('\nNew reserves:');
-    console.log('LXON:', ethers.formatEther(newReserveLXON));
-    console.log('Native:', ethers.formatEther(newReserveNative));
-    
-    console.log('\n✅ Liquidity added successfully!');
-    console.log('Trading is now enabled for LXON ↔ Native token pair');
-    
+
+    // Check liquidity pool status
+    const poolReserves = await lxonDEX.getReserves(
+      TOKEN_ADDRESS,
+      TOKEN_ADDRESS
+    );
+    console.log('\nPool reserves:');
+    console.log('Token0 reserve:', ethers.formatEther(poolReserves[0]), 'XON');
+    console.log('Token1 reserve:', ethers.formatEther(poolReserves[1]), 'XON');
+
+    console.log('\n✓ Liquidity addition complete!');
+    console.log('\nTrading is now enabled on the LXON Native DEX.');
+    console.log('Users can now swap XON tokens on the DEX.');
+
   } catch (error) {
-    console.error('❌ Adding liquidity failed:', error);
-    throw error;
+    console.error('Liquidity addition failed:', error.message);
+    process.exit(1);
   }
 }
 
