@@ -213,6 +213,9 @@ export class LXONNode {
       case 'eth_estimateGas':
         return '0x5208'; // 21000 in hex
 
+      case 'eth_gasPrice':
+        return '0x64'; // 100 gwei in hex
+
       case 'eth_sendRawTransaction':
         const txHash = '0x' + Buffer.from(Date.now().toString()).toString('hex').padEnd(64, '0');
         return txHash;
