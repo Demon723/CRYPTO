@@ -83,7 +83,7 @@ function processTransaction(txData) {
     gas: txData.gas || '0x5208',
     gasPrice: txData.gasPrice || '0x64',
     input: txData.input || '0x',
-    nonce: state.accounts[txData.from || '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266']?.nonce || 0,
+    nonce: (state.accounts[txData.from || '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'] && state.accounts[txData.from || '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'].nonce) || 0,
     blockNumber: state.blockNumber,
     blockHash: generateBlockHash(state.blockNumber),
     transactionIndex: Object.keys(state.transactions).length,
@@ -168,12 +168,12 @@ const server = http.createServer((req, res) => {
             result = CHAIN_ID.toString();
             break;
           case 'eth_getBalance':
-            const address = request.params[0]?.toLowerCase();
+            const address = request.params[0] && request.params[0].toLowerCase();
             const account = state.accounts[address];
             result = '0x' + (account ? BigInt(account.balance).toString(16) : '0');
             break;
           case 'eth_getTransactionCount':
-            const nonceAddress = request.params[0]?.toLowerCase();
+            const nonceAddress = request.params[0] && request.params[0].toLowerCase();
             const nonceAccount = state.accounts[nonceAddress];
             result = '0x' + (nonceAccount ? nonceAccount.nonce.toString(16) : '0');
             break;
@@ -229,7 +229,7 @@ const server = http.createServer((req, res) => {
             };
             break;
           case 'eth_getCode':
-            const codeAddress = request.params[0]?.toLowerCase();
+            const codeAddress = request.params[0] && request.params[0].toLowerCase();
             const contract = state.contracts[codeAddress];
             result = contract ? contract.bytecode : '0x';
             break;
