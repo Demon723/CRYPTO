@@ -158,7 +158,7 @@ export class LXONNode {
               res.writeHead(200, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({
                 jsonrpc: '2.0',
-                id: rpcReq.id ?? 1,
+                id: rpcReq.id || 1,
                 result,
               }));
             } catch (err: any) {

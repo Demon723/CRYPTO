@@ -22,8 +22,8 @@ export function encodeUser(user: CryptoUser): Uint8Array {
   const parts = [
     Buffer.from(user.address),
     Buffer.from(user.publicKey),
-    Buffer.from(user.balance ?? '0'),
-    Buffer.from((user.nonce ?? 0).toString()),
+    Buffer.from(user.balance || '0'),
+    Buffer.from((user.nonce || 0).toString()),
   ];
 
   if (user.metadata) {
@@ -102,7 +102,7 @@ export function generateUserStateRoot(users: CryptoUser[]): string {
     const next: Buffer[] = [];
     for (let i = 0; i < level.length; i += 2) {
       const left = level[i];
-      const right = level[i + 1] ?? left;
+      const right = level[i + 1] || left;
       next.push(sha256x2(Buffer.concat([left, right])));
     }
     level = next;
@@ -126,7 +126,7 @@ export function generateTxMerkleRoot(txs: CryptoTx[]): string {
     const next: Buffer[] = [];
     for (let i = 0; i < level.length; i += 2) {
       const left = level[i];
-      const right = level[i + 1] ?? left;
+      const right = level[i + 1] || left;
       next.push(sha256x2(Buffer.concat([left, right])));
     }
     level = next;

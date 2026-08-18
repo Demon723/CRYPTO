@@ -51,7 +51,7 @@ export class TransactionPool {
     }
 
     const nonce = this.nonces.get(sender) || 0;
-    const txNonce = (tx as any).nonce ?? nonce;
+    const txNonce = (tx as any).nonce || nonce;
     if (txNonce < nonce) {
       return { accepted: false, reason: 'Nonce too low' };
     }
@@ -66,7 +66,7 @@ export class TransactionPool {
       transaction: tx,
       sender,
       fee,
-      nonce: (tx as any).nonce ?? nonce,
+      nonce: (tx as any).nonce || nonce,
       timestamp: Date.now(),
       status: 'pending',
       priority: Number(fee),
