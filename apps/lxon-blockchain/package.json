@@ -2,12 +2,13 @@
   "name": "lxon-blockchain",
   "version": "1.0.0",
   "description": "LXON high-throughput blockchain simulation engine implementing Block-STM, Asynchronous Storage, and zkVM proving pipeline",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/node.js",
+  "types": "dist/node.d.ts",
   "scripts": {
     "build": "tsc",
     "demo": "tsx src/demo.ts",
-    "test": "node dist/test/run-tests.js"
+    "test": "node dist/test/run-tests.js",
+    "start": "node dist/node.js"
   },
   "dependencies": {
     "@noble/curves": "^1.4.0",

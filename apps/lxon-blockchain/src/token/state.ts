@@ -99,6 +99,17 @@ export class NativeTokenState {
     this.nonces.set(key, account.nonce);
   }
 
+  // Convenience method for RPC balance queries
+  getBalance(address: string): bigint | null {
+    try {
+      const addrBytes = Buffer.from(address.startsWith('0x') ? address.slice(2) : address, 'hex');
+      const [account] = this.getAccount(addrBytes, Number.MAX_SAFE_INTEGER);
+      return account?.balance || null;
+    } catch {
+      return null;
+    }
+  }
+
   // ----- Stake Operations -----
 
   getStake(address: Uint8Array, txIndex: number): [StakePosition | null, number | null] {
