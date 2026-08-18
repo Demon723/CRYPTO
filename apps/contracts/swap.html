@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LXON Swap</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.0/dist/ethers.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container { max-width: 480px; margin: 0 auto; }
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #a78bfa, #6366f1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .card {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(51, 65, 85, 0.5);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+      backdrop-filter: blur(10px);
+    }
+    .form-group { margin-bottom: 16px; }
+    label {
+      display: block;
+      font-size: 0.875rem;
+      color: #cbd5e1;
+      margin-bottom: 8px;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid #334155;
+      background: rgba(15, 23, 42, 0.8);
+      color: #e2e8f0;
+      font-size: 1rem;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #7c3aed;
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: linear-gradient(135deg, #7c3aed, #6366f1);
+      color: white;
+    }
+    button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(124, 58, 237, 0.3);
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .btn-secondary {
+      background: rgba(71, 85, 105, 0.8);
+      margin-top: 8px;
+    }
+    .btn-secondary:hover {
+      background: rgba(71, 85, 105, 1);
+    }
+    .result {
+      margin-top: 16px;
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 0.875rem;
+      word-break: break-all;
+    }
+    .result.success {
+      background: rgba(5, 46, 22, 0.5);
+      border: 1px solid rgba(22, 101, 52, 0.5);
+      color: #4ade80;
+    }
+    .result.error {
+      background: rgba(69, 10, 10, 0.5);
+      border: 1px solid rgba(153, 27, 27, 0.5);
+      color: #f87171;
+    }
+    .result.info {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid rgba(51, 65, 85, 0.5);
+      color: #94a3b8;
+    }
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .status-item {
+      background: rgba(15, 23, 42, 0.5);
+      padding: 12px;
+      border-radius: 12px;
+    }
+    .status-label {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .status-value {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-top: 6px;
+      color: #e2e8f0;
+    }
+    .swap-direction {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 8px 0;
+    }
+    .swap-icon {
+      font-size: 1.5rem;
+      color: #a78bfa;
+      cursor: pointer;
+    }
+    .network-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: rgba(22, 101, 52, 0.3);
+      color: #4ade80;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🪙 LXON Swap</h1>
+      <p class="subtitle">Decentralized Exchange on LXON Chain</p>
+      <div class="network-badge" id="networkBadge">Not Connected</div>
+    </div>
+
+    <div class="card">
+      <div class="form-group">
+        <label>From Token</label>
+        <input type="text" id="fromAmount" placeholder="Amount" />
+        <select id="fromToken" style="margin-top: 8px;">
+          <option value="NATIVE">Native Token</option>
+          <option value="XON">XON</option>
+        </select>
+      </div>
+
+      <div class="swap-direction">
+        <span class="swap-icon" onclick="swapDirection()">⇅</span>
+      </div>
+
+      <div class="form-group">
+        <label>To Token</label>
+        <input type="text" id="toAmount" placeholder="Estimated amount" readonly />
+        <select id="toToken" style="margin-top: 8px;">
+          <option value="XON">XON</option>
+          <option value="NATIVE">Native Token</option>
+        </select>
+      </div>
+
+      <div class="result info" id="priceInfo">Connect wallet to see prices</div>
+
+      <button id="swapButton" onclick="executeSwap()" disabled>Connect Wallet</button>
+      <div id="swapResult"></div>
+    </div>
+
+    <div class="card">
+      <div class="form-group">
+        <button class="btn-secondary" onclick="connectWallet()">Connect Wallet</button>
+        <button class="btn-secondary" onclick="disconnectWallet()">Disconnect</button>
+      </div>
+      <div id="walletInfo"></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom: 12px; color: #a78bfa;">Pool Information</h3>
+      <div id="poolInfo">
+        <div class="result info">Loading pool information...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CONTRACTS = {
+      LXON_TOKEN: '0x5FC8d32690cc91D4c39d9d3abcBD16989F875707',
+      SWAP: '0x0165878A594ca255338adfa4d48449f69242Eb8F',
+      RPC_URL: 'http://localhost:8545',
+      CHAIN_ID: 31337
+    };
+
+    const LXON_ABI = [
+      'function balanceOf(address owner) view returns (uint256)',
+      'function approve(address spender, uint256 amount) returns (bool)',
+      'function transfer(address to, uint256 amount) returns (bool)',
+      'function name() view returns (string)',
+      'function symbol() view returns (string)',
+      'function decimals() view returns (uint8)',
+      'function totalSupply() view returns (uint256)'
+    ];
+
+    const SWAP_ABI = [
+      'function getReserves() view returns (uint256, uint256)',
+      'function addLiquidity(uint256 tokenAmount) payable',
+      'function swapNativeForToken() payable returns (uint256)',
+      'function swapTokenForNative(uint256 tokenAmount) returns (uint256)'
+    ];
+
+    let provider;
+    let signer;
+    let userAddress;
+
+    async function connectWallet() {
+      try {
+        if (typeof window.ethereum !== 'undefined') {
+          provider = new ethers.BrowserProvider(window.ethereum);
+          
+          // Request account access
+          await provider.send('eth_requestAccounts', []);
+          signer = await provider.getSigner();
+          userAddress = await signer.getAddress();
+
+          // Switch to LXON chain
+          try {
+            await window.ethereum.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: '0x7d73' }], // 31337 in hex
+            });
+          } catch (switchError) {
+            // Chain not added, add it
+            await window.ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [{
+                chainId: '0x7d73',
+                chainName: 'LXON Local',
+                nativeCurrency: {
+                  name: 'Native Token',
+                  symbol: 'XON',
+                  decimals: 18
+                },
+                rpcUrls: [CONTRACTS.RPC_URL],
+                blockExplorerUrls: []
+              }]
+            });
+          }
+
+          updateWalletUI();
+          loadPoolInfo();
+          updatePriceInfo();
+        } else {
+          alert('Please install MetaMask!');
+        }
+      } catch (error) {
+        console.error('Connection error:', error);
+        document.getElementById('swapResult').innerHTML = 
+          `<div class="result error">Connection failed: ${error.message}</div>`;
+      }
+    }
+
+    function disconnectWallet() {
+      provider = null;
+      signer = null;
+      userAddress = null;
+      updateWalletUI();
+      document.getElementById('swapResult').innerHTML = '';
+    }
+
+    function updateWalletUI() {
+      const badge = document.getElementById('networkBadge');
+      const button = document.getElementById('swapButton');
+      const walletInfo = document.getElementById('walletInfo');
+
+      if (userAddress) {
+        badge.textContent = 'LXON Chain (31337)';
+        button.disabled = false;
+        button.textContent = 'Swap';
+        walletInfo.innerHTML = `
+          <div class="result success">
+            <div class="status-grid">
+              <div class="status-item">
+                <div class="status-label">Connected</div>
+                <div class="status-value">${userAddress.slice(0, 6)}...${userAddress.slice(-4)}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        badge.textContent = 'Not Connected';
+        button.disabled = true;
+        button.textContent = 'Connect Wallet';
+        walletInfo.innerHTML = '';
+      }
+    }
+
+    async function loadPoolInfo() {
+      try {
+        if (!provider) return;
+        
+        const swap = new ethers.Contract(CONTRACTS.SWAP, SWAP_ABI, provider);
+        const [reserveNative, reserveToken] = await swap.getReserves();
+        
+        document.getElementById('poolInfo').innerHTML = `
+          <div class="status-grid">
+            <div class="status-item">
+              <div class="status-label">Native Reserve</div>
+              <div class="status-value">${ethers.formatEther(reserveNative)}</div>
+            </div>
+            <div class="status-item">
+              <div class="status-label">XON Reserve</div>
+              <div class="status-value">${ethers.formatEther(reserveToken)}</div>
+            </div>
+            <div class="status-item">
+              <div class="status-label">Price per XON</div>
+              <div class="status-value">${(Number(ethers.formatEther(reserveNative)) / Number(ethers.formatEther(reserveToken))).toFixed(6)} Native</div>
+            </div>
+            <div class="status-item">
+              <div class="status-label">Fee</div>
+              <div class="status-value">0.3%</div>
+            </div>
+          </div>
+        `;
+      } catch (error) {
+        document.getElementById('poolInfo').innerHTML = 
+          `<div class="result error">Failed to load pool: ${error.message}</div>`;
+      }
+    }
+
+    function swapDirection() {
+      const fromToken = document.getElementById('fromToken');
+      const toToken = document.getElementById('toToken');
+      const temp = fromToken.value;
+      fromToken.value = toToken.value;
+      toToken.value = temp;
+      updatePriceInfo();
+    }
+
+    async function updatePriceInfo() {
+      const fromToken = document.getElementById('fromToken').value;
+      const fromAmount = document.getElementById('fromAmount').value;
+      
+      if (!fromAmount || parseFloat(fromAmount) <= 0) {
+        document.getElementById('toAmount').value = '';
+        document.getElementById('priceInfo').textContent = 'Enter amount to see price';
+        return;
+      }
+
+      try {
+        if (!provider) return;
+        
+        const swap = new ethers.Contract(CONTRACTS.SWAP, SWAP_ABI, provider);
+        const amount = ethers.parseEther(fromAmount);
+        
+        let quote;
+        if (fromToken === 'NATIVE') {
+          quote = await swap.swapNativeForToken.quote(amount);
+        } else {
+          quote = await swap.swapTokenForNative.quote(amount);
+        }
+        
+        document.getElementById('toAmount').value = ethers.formatEther(quote);
+        document.getElementById('priceInfo').textContent = 
+          `1 ${fromToken} ≈ ${ethers.formatEther(quote)} ${document.getElementById('toToken').value}`;
+      } catch (error) {
+        document.getElementById('priceInfo').textContent = 'Failed to get price quote';
+      }
+    }
+
+    async function executeSwap() {
+      if (!signer) {
+        document.getElementById('swapResult').innerHTML = 
+          '<div class="result error">Please connect wallet first</div>';
+        return;
+      }
+
+      const fromToken = document.getElementById('fromToken').value;
+      const fromAmount = document.getElementById('fromAmount').value;
+      const resultDiv = document.getElementById('swapResult');
+
+      if (!fromAmount || parseFloat(fromAmount) <= 0) {
+        resultDiv.innerHTML = '<div class="result error">Please enter a valid amount</div>';
+        return;
+      }
+
+      try {
+        const swap = new ethers.Contract(CONTRACTS.SWAP, SWAP_ABI, signer);
+        const amount = ethers.parseEther(fromAmount);
+        
+        resultDiv.innerHTML = '<div class="result info">Processing swap...</div>';
+        
+        let tx;
+        if (fromToken === 'NATIVE') {
+          tx = await swap.swapNativeForToken({ value: amount });
+        } else {
+          const lxon = new ethers.Contract(CONTRACTS.LXON_TOKEN, LXON_ABI, signer);
+          await lxon.approve(CONTRACTS.SWAP, amount);
+          tx = await swap.swapTokenForNative(amount);
+        }
+        
+        await tx.wait();
+        resultDiv.innerHTML = '<div class="result success">✅ Swap completed successfully!</div>';
+        
+        loadPoolInfo();
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="result error">❌ Swap failed: ${error.message}</div>`;
+      }
+    }
+
+    document.getElementById('fromAmount').addEventListener('input', updatePriceInfo);
+    document.getElementById('fromToken').addEventListener('change', updatePriceInfo);
+
+    // Auto-connect if previously connected
+    if (typeof window.ethereum !== 'undefined') {
+      window.ethereum.request({ method: 'eth_accounts' }).then(accounts => {
+        if (accounts.length > 0) {
+          connectWallet();
+        }
+      });
+    }
+  </script>
+</body>
+</html>

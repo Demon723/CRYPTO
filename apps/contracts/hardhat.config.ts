@@ -24,7 +24,12 @@ const config: HardhatUserConfig = {
     lxon: {
       url: 'http://3.110.221.224:8545',
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 1
+      chainId: 723
+    },
+    lxonnative: {
+      url: 'http://3.110.221.224:8545',
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 723
     },
     mainnet: {
       url: process.env.MAINNET_RPC_URL || '',
