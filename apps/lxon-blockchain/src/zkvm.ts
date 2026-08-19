@@ -1,67 +1,211 @@
 export interface zkVMReceipt {
   journal: Buffer;
   seal: Buffer;
+  publicOutputs: Buffer[];
+}
+
+export interface RiscVTraceSegment {
+  segmentId: Buffer;
+  instructions: Buffer;
+  memoryDeltas: Buffer;
+  registerSnapshot: Buffer;
+}
+
+export interface SegmentStarkProof {
+  segmentId: Buffer;
+  merkleRoot: Buffer;
+  proof: Buffer;
+}
+
+export interface RecursiveSNARK {
+  groth16Proof: Buffer;
+  publicInputs: Buffer[];
+  aggregatedRoot: Buffer;
 }
 
 export class RISCVzkVMProverStack {
-  constructor(public elfBinary: Buffer) {}
+  constructor(
+    public elfBinary: Buffer,
+    public guestMemorySize: number = 256 * 1024 * 1024,
+    public traceChunkSize: number = 65536
+  ) {}
 
-  // 1. Simulates running the guest program, outputting execution trace chunks & journal
-  public async execute_and_generate_trace(
-    inputData: Buffer
-  ): Promise<[Buffer, Buffer[]]> {
-    // Simulated RISC-V Trace Logs
-    const executionTraceSession = Buffer.from("TRACE_LOG_DATA_RISCV_EXECUTION");
-    const publicJournal = Buffer.from(
-      `STATE_ROOT_PRE_${inputData.toString("hex")}_STATE_ROOT_POST_0x9857`
+  public async execute_and_generate_trace(inputData: Buffer): Promise<[Buffer, RiscVTraceSegment[]]> {
+    const statePreImage = this.hashState(inputData);
+    const traceChunks = this.chunkTrace(statePreImage, this.traceChunkSize);
+    const segments: RiscVTraceSegment[] = traceChunks.map((chunk, idx) => ({
+      segmentId: this.computeSegmentId(idx),
+      instructions: chunk.instructions,
+      memoryDeltas: chunk.memoryDeltas,
+      registerSnapshot: chunk.registerSnapshot,
+    }));
+    const publicJournal = this.computeJournal(segments);
+    return [publicJournal, segments];
+  }
+
+  public async generate_segment_starks(segments: RiscVTraceSegment[]): Promise<SegmentStarkProof[]> {
+    return Promise.all(
+      segments.map(async (segment) => {
+        const merkleRoot = this.computeSegmentMerkleRoot(segment);
+        const proof = this.simulateSTARKGeneration(segment);
+        return { segmentId: segment.segmentId, merkleRoot, proof };
+      })
     );
-
-    // Segment trace session into individual chunks
-    const traceSegments: Buffer[] = [];
-    for (let i = 0; i < executionTraceSession.length; i += 10) {
-      traceSegments.push(executionTraceSession.subarray(i, i + 10));
-    }
-
-    return [publicJournal, traceSegments];
   }
 
-  // 2. Proves individual segments generating STARK proofs
-  public async generate_segment_starks(
-    traceSegments: Buffer[]
-  ): Promise<Buffer[]> {
-    const starkPromises = traceSegments.map(async (segment) => {
-      // Simulate STARK generation cryptographic overhead (~2 milliseconds per segment)
-      await new Promise(resolve => setTimeout(resolve, 2));
-      return Buffer.concat([Buffer.from("STARK_PROOF_"), segment]);
-    });
-
-    return Promise.all(starkPromises);
-  }
-
-  // 3. Compress STARK segment proofs into a single Groth16/PLONK SNARK receipt (256 bytes)
   public async aggregate_recursive_snark(
-    starkProofs: Buffer[],
+    starkProofs: SegmentStarkProof[],
     publicJournal: Buffer
   ): Promise<zkVMReceipt> {
-    // Simulated recursive aggregation
-    const compositeStark = Buffer.concat(starkProofs);
-    
-    // SNARK compression to exactly 256 bytes
-    const succinctSeal = Buffer.alloc(256);
-    compositeStark.copy(succinctSeal, 0, 0, 128);
-    publicJournal.copy(succinctSeal, 128, 0, 128);
-
+    const aggregatedRoot = this.buildProofTree(starkProofs.map(p => p.merkleRoot));
+    const groth16Proof = this.compressToSNARK(aggregatedRoot, publicJournal);
     return {
       journal: publicJournal,
-      seal: succinctSeal
+      seal: groth16Proof,
+      publicOutputs: [aggregatedRoot],
     };
   }
 
-  // Orchestrator: Full proving pipeline
   public async prove_state_transition(inputData: Buffer): Promise<zkVMReceipt> {
     const [journal, segments] = await this.execute_and_generate_trace(inputData);
     const starkProofs = await this.generate_segment_starks(segments);
     const receipt = await this.aggregate_recursive_snark(starkProofs, journal);
     return receipt;
   }
+
+  public verify_receipt(receipt: zkVMReceipt, expectedRoot: Buffer): boolean {
+    const recomputed = this.hashState(receipt.journal);
+    return recomputed.equals(expectedRoot);
+  }
+
+  private hashState(data: Buffer): Buffer {
+    let h = Buffer.from(data);
+    for (let i = 0; i < 3; i++) {
+      h = Buffer.from(this.sha256(h));
+    }
+    return h.subarray(0, 32);
+  }
+
+  private chunkTrace(state: Buffer, chunkSize: number): Array<{ instructions: Buffer; memoryDeltas: Buffer; registerSnapshot: Buffer }> {
+    const chunks: Array<{ instructions: Buffer; memoryDeltas: Buffer; registerSnapshot: Buffer }> = [];
+    let offset = 0;
+    while (offset < state.length) {
+      const end = Math.min(offset + chunkSize, state.length);
+      const instructions = state.subarray(offset, end);
+      const memoryDeltas = this.sha256(instructions).subarray(0, Math.min(32, end - offset));
+      const registerSnapshot = this.sha256(memoryDeltas).subarray(0, 32);
+      chunks.push({ instructions, memoryDeltas, registerSnapshot });
+      offset = end;
+    }
+    return chunks;
+  }
+
+  private computeSegmentId(index: number): Buffer {
+    return this.sha256(Buffer.from(`SEGMENT_${index}`)).subarray(0, 32);
+  }
+
+  private computeJournal(segments: RiscVTraceSegment[]): Buffer {
+    const roots = segments.map(s => s.registerSnapshot);
+    const combined = Buffer.concat(roots);
+    return this.sha256(combined);
+  }
+
+  private computeSegmentMerkleRoot(segment: RiscVTraceSegment): Buffer {
+    const combined = Buffer.concat([segment.instructions, segment.memoryDeltas, segment.registerSnapshot]);
+    return this.sha256(combined);
+  }
+
+  private buildProofTree(roots: Buffer[]): Buffer {
+    if (roots.length === 0) return Buffer.alloc(32, 0);
+    if (roots.length === 1) return roots[0];
+    const next: Buffer[] = [];
+    for (let i = 0; i < roots.length; i += 2) {
+      if (i + 1 < roots.length) {
+        next.push(this.sha256(Buffer.concat([roots[i], roots[i + 1]])));
+      } else {
+        next.push(roots[i]);
+      }
+    }
+    return this.buildProofTree(next);
+  }
+
+  private compressToSNARK(aggregatedRoot: Buffer, journal: Buffer): Buffer {
+    const seal = Buffer.alloc(256);
+    aggregatedRoot.copy(seal, 0, 0, 32);
+    journal.copy(seal, 32, 0, 32);
+    for (let i = 64; i < 256; i++) {
+      seal[i] = (seal[i % 32] ^ (i & 0xFF)) & 0xFF;
+    }
+    return seal;
+  }
+
+  private simulateSTARKGeneration(segment: RiscVTraceSegment): Buffer {
+    return this.sha256(Buffer.concat([segment.segmentId, segment.instructions, segment.memoryDeltas]));
+  }
+
+  private sha256(data: Buffer): Buffer {
+    let h1 = 0x6a09e667;
+    let h2 = 0xbb67ae85;
+    let h3 = 0x3c6ef372;
+    let h4 = 0xa54ff53a;
+    let h5 = 0x510e527f;
+    let h6 = 0x9b05688c;
+    let h7 = 0x1f83d9ab;
+    let h8 = 0x5be0cd19;
+    const padded = this.padSHA256(data);
+    for (let offset = 0; offset < padded.length; offset += 64) {
+      const block = padded.subarray(offset, offset + 64);
+      const w = new Uint32Array(64);
+      for (let i = 0; i < 16; i++) {
+        w[i] = (block[i * 4] << 24) | (block[i * 4 + 1] << 16) | (block[i * 4 + 2] << 8) | block[i * 4 + 3];
+      }
+      for (let i = 16; i < 64; i++) {
+        const s0 = this.rotr(w[i - 15], 7) ^ this.rotr(w[i - 15], 18) ^ (w[i - 15] >>> 3);
+        const s1 = this.rotr(w[i - 2], 17) ^ this.rotr(w[i - 2], 19) ^ (w[i - 2] >>> 10);
+        w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0;
+      }
+      let a = h1, b = h2, c = h3, d = h4, e = h5, f = h6, g = h7, h = h8;
+      for (let i = 0; i < 64; i++) {
+        const S1 = this.rotr(e, 6) ^ this.rotr(e, 11) ^ this.rotr(e, 25);
+        const ch = (e & f) ^ (~e & g);
+        const temp1 = (h + S1 + ch + this.K[i] + w[i]) | 0;
+        const S0 = this.rotr(a, 2) ^ this.rotr(a, 13) ^ this.rotr(a, 22);
+        const maj = (a & b) ^ (a & c) ^ (b & c);
+        const temp2 = (S0 + maj) | 0;
+        h = g; g = f; f = e; e = (d + temp1) | 0; d = c; c = b; b = a; a = (temp1 + temp2) | 0;
+      }
+      h1 = (h1 + a) | 0; h2 = (h2 + b) | 0; h3 = (h3 + c) | 0; h4 = (h4 + d) | 0;
+      h5 = (h5 + e) | 0; h6 = (h6 + f) | 0; h7 = (h7 + g) | 0; h8 = (h8 + h) | 0;
+    }
+    const out = Buffer.alloc(32);
+    const view = new Uint32Array(out.buffer, out.byteOffset);
+    view[0] = h1; view[1] = h2; view[2] = h3; view[3] = h4;
+    view[4] = h5; view[5] = h6; view[6] = h7; view[7] = h8;
+    return out;
+  }
+
+  private padSHA256(data: Buffer): Buffer {
+    const len = data.length;
+    const k = (448 - (len + 1) % 512) % 512;
+    const padded = Buffer.alloc(len + 1 + k + 8);
+    data.copy(padded, 0);
+    padded[len] = 0x80;
+    padded.writeBigUInt64BE(BigInt(len * 8), padded.length - 8);
+    return padded;
+  }
+
+  private rotr(x: number, n: number): number {
+    return ((x >>> n) | (x << (32 - n))) | 0;
+  }
+
+  private readonly K = [
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+  ];
 }

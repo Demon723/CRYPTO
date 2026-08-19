@@ -11,6 +11,10 @@
  * Based on: MonadBFT (arXiv:2502.20692)
  */
 
+import { validateAstroBlock } from './astro-validation';
+import type { Transaction } from '../block-stm';
+import { getCurrentPhase } from '../astro-config';
+
 export interface ViewTip {
   viewNumber: number;
   blockHash: string;
@@ -55,6 +59,8 @@ export interface BlockProposal {
   qc: QuorumCertificate;
   tc: TimeoutCertificate | null;
   nec: NoEndorsementCertificate | null;
+  astroPhase: number;
+  astroAlgorithmId: number;
 }
 
 export interface ValidatorSet {
@@ -70,8 +76,10 @@ export class MonadBFTEngine {
   public timeoutCertificates: Map<number, TimeoutCertificate> = new Map();
   public noEndorsementCerts: Map<string, NoEndorsementCertificate> = new Map();
   public highTips: Map<string, ViewTip> = new Map();
+  public genesisTime: number;
+  public astroDeadlineHeight: number;
 
-  constructor(validatorAddresses: string[], totalStake: bigint) {
+  constructor(validatorAddresses: string[], totalStake: bigint, genesisTime: number = Date.now()) {
     const validatorCount = validatorAddresses.length;
     const byzantineThreshold = Math.floor((validatorCount - 1) / 3);
 
@@ -79,6 +87,8 @@ export class MonadBFTEngine {
       validators: new Map(validatorAddresses.map((addr) => [addr, totalStake / BigInt(validatorCount)])),
       byzantineThreshold,
     };
+    this.genesisTime = genesisTime;
+    this.astroDeadlineHeight = 20 * 365 * 24 * 60 * 60;
   }
 
   /**
@@ -133,6 +143,14 @@ export class MonadBFTEngine {
     this.highTips.set(proposal.blockHash, tip);
 
     return { accepted: true, reason: 'Proposal accepted' };
+  }
+
+  /**
+   * Astro-aware block validation: verifies hybrid/ARC signatures
+   * and enforces phase transitions.
+   */
+  validateAstroBlock(blockTime: number, currentHeight: number, transactions: Transaction[]): { valid: boolean; reason?: string; phase: number } {
+    return validateAstroBlock(blockTime, this.genesisTime, this.astroDeadlineHeight, currentHeight, transactions as any);
   }
 
   /**
@@ -212,6 +230,8 @@ export class MonadBFTEngine {
       },
       tc,
       nec: this.noEndorsementCerts.get(`${failedView}:${highTip.blockHash}`) || null,
+      astroPhase: getCurrentPhase(this.genesisTime, Date.now()),
+      astroAlgorithmId: 0x04,
     };
 
     return recoveryProposal;

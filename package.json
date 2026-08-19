@@ -1,28 +1,39 @@
 {
-  "name": "synex",
+  "name": "lxon",
   "version": "1.0.0",
-  "description": "Production-ready AI Crypto Operating System",
+  "description": "LXON Cryptocurrency Program",
   "private": true,
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "apps/contracts-helios/*",
+    "apps/founder-device/*"
   ],
+  "bin": {
+    "lxon": "./cli.ts"
+  },
   "scripts": {
-    "dev": "pnpm run -r dev",
+    "cli": "tsx cli.ts",
+    "demo": "tsx apps/lxon-blockchain/src/demo.ts",
     "build": "pnpm run -r build",
-    "build:backend": "pnpm --filter backend build",
-    "build:frontend": "pnpm --filter frontend build",
+    "build:core": "pnpm run -r build",
+    "build:blockchain": "pnpm --filter lxon-blockchain build",
+    "build:contracts": "pnpm --filter lxon-contracts compile",
+    "build:contracts-helios": "pnpm --filter lxon-contracts-helios build",
+    "build:helios-types": "pnpm --filter @lxon/helios-types build",
+    "build:backend": "pnpm --filter lxon-backend build",
+    "build:founder-device": "pnpm --filter lxon-founder-device build",
     "test": "pnpm run -r test",
-    "lint": "pnpm run -r lint",
+    "test:blockchain": "pnpm --filter lxon-blockchain test",
+    "test:contracts": "pnpm --filter lxon-contracts test",
+    "test:contracts-helios": "pnpm --filter lxon-contracts-helios test",
     "typecheck": "pnpm run -r typecheck",
     "clean": "pnpm run -r clean",
-    "db:generate": "pnpm --filter backend db:generate",
-    "db:push": "pnpm --filter backend db:push",
-    "db:migrate": "pnpm --filter backend db:migrate",
-    "db:seed": "pnpm --filter backend db:seed",
-    "docker:up": "docker compose -f infrastructure/docker/docker-compose.yml up -d",
-    "docker:down": "docker compose -f infrastructure/docker/docker-compose.yml down",
-    "docker:logs": "docker compose -f infrastructure/docker/docker-compose.yml logs -f"
+    "founder:cli": "pnpm --filter lxon-founder-device dev",
+    "founder:api": "pnpm --filter lxon-founder-device api",
+    "founder:ui": "pnpm --filter lxon-founder-device ui",
+    "founder:install:pi": "pnpm --filter lxon-founder-device install:pi",
+    "founder:setup:nfc": "pnpm --filter lxon-founder-device setup:nfc"
   },
   "engines": {
     "node": ">=20.0.0",
@@ -30,18 +41,15 @@
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
-    "typescript": "^5.3.0",
-    "tsx": "^4.7.0"
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0"
   },
   "keywords": [
-    "crypto",
-    "ai",
-    "operating-system",
+    "cryptocurrency",
     "blockchain",
-    "nextjs",
-    "nestjs",
-    "ethereum"
+    "smart-contracts",
+    "crypto"
   ],
-  "author": "Synex Team",
+  "author": "LXON Team",
   "license": "MIT"
 }

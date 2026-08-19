@@ -3,7 +3,7 @@
 ## Base URL
 
 ```
-https://api.synex.ai/api/v1
+https://api.lxon.ai/api/v1
 ```
 
 ## Authentication
@@ -275,7 +275,7 @@ Content-Type: application/json
 
 ### Connection
 ```javascript
-const socket = io('wss://api.synex.ai', {
+const socket = io('wss://api.lxon.ai', {
   auth: {
     token: '<access_token>'
   }

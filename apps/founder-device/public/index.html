@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LXON Founder Device</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container { max-width: 800px; margin: 0 auto; }
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 8px;
+      color: #a78bfa;
+    }
+    .subtitle { color: #94a3b8; font-size: 0.875rem; margin-bottom: 24px; }
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #94a3b8;
+      margin-bottom: 12px;
+    }
+    .form-group { margin-bottom: 12px; }
+    label {
+      display: block;
+      font-size: 0.875rem;
+      color: #cbd5e1;
+      margin-bottom: 4px;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: #e2e8f0;
+      font-size: 1rem;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #7c3aed;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-activate { background: #16a34a; color: white; }
+    .btn-freeze { background: #ca8a04; color: white; }
+    .btn-deactivate { background: #dc2626; color: white; }
+    .btn-secondary { background: #475569; color: white; margin-top: 8px; }
+    .actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .result {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      word-break: break-all;
+    }
+    .result.success { background: #052e16; border: 1px solid #166534; color: #4ade80; }
+    .result.error { background: #450a0a; border: 1px solid #991b1b; color: #f87171; }
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .status-item { background: #0f172a; padding: 12px; border-radius: 8px; }
+    .status-label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; }
+    .status-value { font-size: 1.125rem; font-weight: 600; margin-top: 4px; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-active { background: #166534; color: #4ade80; }
+    .badge-frozen { background: #713f12; color: #facc15; }
+    .badge-deactivated { background: #991b1b; color: #f87171; }
+    .badge-inactive { background: #475569; color: #cbd5e1; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔐 LXON Founder Device</h1>
+    <p class="subtitle" id="deviceName">Loading...</p>
+
+    <div class="card">
+      <div class="card-title">Quick Actions</div>
+      <div class="form-group">
+        <label>Token ID</label>
+        <input type="number" id="tokenId" placeholder="e.g. 1" />
+      </div>
+      <div class="actions">
+        <button class="btn-activate" onclick="doAction('activate')">Activate</button>
+        <button class="btn-freeze" onclick="doAction('freeze')">Freeze</button>
+        <button class="btn-deactivate" onclick="doAction('deactivate')">Deactivate</button>
+      </div>
+      <div id="actionResult"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Check Status</div>
+      <div class="form-group">
+        <label>Token ID</label>
+        <input type="number" id="statusTokenId" placeholder="e.g. 1" />
+      </div>
+      <button class="btn-secondary" onclick="checkStatus()">Check Status</button>
+      <div id="statusResult"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Register Premium Cardholder</div>
+      <div class="form-group">
+        <label>Token ID</label>
+        <input type="number" id="regTokenId" placeholder="e.g. 1" />
+      </div>
+      <div class="form-group">
+        <label>Name Hash (keccak256 of full name)</label>
+        <input type="text" id="nameHash" placeholder="0x..." />
+      </div>
+      <div class="form-group">
+        <label>KYC Hash</label>
+        <input type="text" id="kycHash" placeholder="0x..." />
+      </div>
+      <button class="btn-secondary" onclick="registerCardholder()">Register Cardholder</button>
+      <div id="registerResult"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+
+    async function loadDeviceInfo() {
+      try {
+        const res = await fetch(`${API_BASE}/api/health`);
+        const data = await res.json();
+        document.getElementById('deviceName').textContent = `${data.device} • ${data.ready ? 'Ready' : 'Not configured'}`;
+      } catch (e) {
+        document.getElementById('deviceName').textContent = 'Founder Device • Offline';
+      }
+    }
+
+    async function doAction(action) {
+      const tokenId = document.getElementById('tokenId').value;
+      const resultDiv = document.getElementById('actionResult');
+      if (!tokenId) { resultDiv.innerHTML = '<div class="result error">Token ID required</div>'; return; }
+
+      resultDiv.innerHTML = '<div class="result">Processing...</div>';
+      try {
+        const res = await fetch(`${API_BASE}/api/${action}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tokenId: parseInt(tokenId) }),
+        });
+        const data = await res.json();
+        resultDiv.innerHTML = data.success
+          ? `<div class="result success">✅ ${action} successful<br>Tx: ${data.txHash}</div>`
+          : `<div class="result error">❌ ${data.error}</div>`;
+      } catch (e: any) {
+        resultDiv.innerHTML = `<div class="result error">❌ ${e.message}</div>`;
+      }
+    }
+
+    async function checkStatus() {
+      const tokenId = document.getElementById('statusTokenId').value;
+      const resultDiv = document.getElementById('statusResult');
+      if (!tokenId) { resultDiv.innerHTML = '<div class="result error">Token ID required</div>'; return; }
+
+      resultDiv.innerHTML = '<div class="result">Loading...</div>';
+      try {
+        const res = await fetch(`${API_BASE}/api/status/${tokenId}`);
+        const data = await res.json();
+        resultDiv.innerHTML = `
+          <div class="result success">
+            <div class="status-grid">
+              <div class="status-item">
+                <div class="status-label">Status</div>
+                <div class="status-value">${data.status}</div>
+              </div>
+              <div class="status-item">
+                <div class="status-label">Premium</div>
+                <div class="status-value">${data.isPremium ? 'Yes' : 'No'}</div>
+              </div>
+              <div class="status-item" style="grid-column: span 2">
+                <div class="status-label">Bound Wallet</div>
+                <div class="status-value" style="font-size: 0.875rem; word-break: break-all;">${data.boundWallet || 'None'}</div>
+              </div>
+            </div>
+          </div>`;
+      } catch (e: any) {
+        resultDiv.innerHTML = `<div class="result error">❌ ${e.message}</div>`;
+      }
+    }
+
+    async function registerCardholder() {
+      const tokenId = document.getElementById('regTokenId').value;
+      const nameHash = document.getElementById('nameHash').value;
+      const kycHash = document.getElementById('kycHash').value;
+      const resultDiv = document.getElementById('registerResult');
+
+      if (!tokenId || !nameHash || !kycHash) {
+        resultDiv.innerHTML = '<div class="result error">All fields required</div>'; return;
+      }
+
+      resultDiv.innerHTML = '<div class="result">Processing...</div>';
+      try {
+        const res = await fetch(`${API_BASE}/api/register-cardholder`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tokenId: parseInt(tokenId), nameHash, kycHash }),
+        });
+        const data = await res.json();
+        resultDiv.innerHTML = data.success
+          ? `<div class="result success">✅ Cardholder registered<br>Tx: ${data.txHash}</div>`
+          : `<div class="result error">❌ ${data.error}</div>`;
+      } catch (e: any) {
+        resultDiv.innerHTML = `<div class="result error">❌ ${e.message}</div>`;
+      }
+    }
+
+    loadDeviceInfo();
+  </script>
+</body>
+</html>

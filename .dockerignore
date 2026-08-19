@@ -1,59 +1,70 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
 # Dependencies
 node_modules
-.pnpm
-pnpm-lock.yaml
+npm-debug.log
+yarn-error.log
+pnpm-error.log
+package-lock.json
 
 # Build outputs
 dist
-build
-.out
 .next
-.next/
-.vercel
-.netlify
-
-# Environment
-.env
-.env.local
-.env.*.local
-.env.test
-.env.production
-
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-pnpm-debug.log*
-lerna-debug.log*
+.turbo
+build
+*.tsbuildinfo
 
 # OS
 .DS_Store
 Thumbs.db
+*.log
+.env
+.env.local
+.env.*.local
 
 # IDE
 .vscode
 .idea
 *.swp
 *.swo
+*.sublime-project
+*.sublime-workspace
 
-# Git
-.git
-.gitignore
-
-# Docs and plans (not needed in image)
-README.md
-PROJECT_SUMMARY.md
-docs/
-.kilo/
-.github/
-
-# Tests
+# Testing
 coverage
 .nyc_output
+test
+__tests__
+*.test.js
+*.spec.js
 
-# Misc
+# Docker
+Dockerfile*
 docker-compose*.yml
-docker/
-infrastructure/
-scripts/
-migrations/
+.dockerignore
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.circleci
+.jenkins
+Jenkinsfile
+
+# Docs
+README.md
+CHANGELOG.md
+docs/
+*.md
+
+# Other
+.env.example
+.env.sample
+.editorconfig
+.prettierignore
+.eslintignore
+tsconfig.json
+jest.config.js
+.mocharc.json

@@ -1,0 +1,103 @@
+name: Deploy to Google Cloud Platform
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+
+env:
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCE_INSTANCE_NAME: ${{ secrets.GCE_INSTANCE_NAME }}
+  GCE_ZONE: ${{ secrets.GCE_ZONE }}
+
+jobs:
+  deploy:
+    name: Deploy to GCE
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GCE_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.GCE_EXTERNAL_IP }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to GCE Instance
+        run: |
+          echo "=== Starting Deployment to ${{ github.event.inputs.environment || 'production' }} ==="
+          
+          # SSH into GCE instance
+          ssh -i ~/.ssh/id_rsa ${{ secrets.GCE_USERNAME }}@${{ secrets.GCE_EXTERNAL_IP }} << 'ENDSSH'
+            cd ~/LXON
+            
+            # Pull latest changes
+            echo "Pulling latest changes..."
+            git pull origin main
+            
+            # Navigate to contracts directory
+            cd apps/contracts
+            
+            # Install dependencies
+            echo "Installing dependencies..."
+            npm install
+            
+            # Compile contracts
+            echo "Compiling contracts..."
+            npx hardhat compile
+            
+            # Run deployment script
+            echo "Running deployment script..."
+            cd ~/LXON
+            ./deploy.sh
+            
+            # Restart services
+            echo "Restarting services..."
+            cd apps/contracts
+            pm2 restart all
+            pm2 save
+            
+            echo "=== Deployment Complete ==="
+          ENDSSH
+
+      - name: Verify Deployment
+        run: |
+          echo "=== Verifying Deployment ==="
+          
+          ssh -i ~/.ssh/id_rsa ${{ secrets.GCE_USERNAME }}@${{ secrets.GCE_EXTERNAL_IP }} << 'ENDSSH'
+            # Check PM2 status
+            pm2 status
+            
+            # Check service health
+            curl -f http://localhost:8080/health || exit 1
+            
+            echo "=== Verification Complete ==="
+          ENDSSH
+
+      - name: Cleanup SSH
+        if: always()
+        run: |
+          rm -f ~/.ssh/id_rsa
+
+      - name: Notify Deployment Status
+        if: always()
+        run: |
+          if [ ${{ job.status }} == 'success' ]; then
+            echo "✅ Deployment successful to ${{ github.event.inputs.environment || 'production' }}"
+          else
+            echo "❌ Deployment failed to ${{ github.event.inputs.environment || 'production' }}"
+          fi

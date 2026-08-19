@@ -1,0 +1,19 @@
+{
+  "name": "lxon-contracts-helios",
+  "version": "1.0.0",
+  "description": "LXON Helios Smart Contracts - PBT, TBA, Card Registry",
+  "license": "MIT",
+  "scripts": {
+    "build": "forge build",
+    "test": "forge test",
+    "test:coverage": "forge coverage",
+    "deploy:local": "forge script script/DeployV3.s.sol:DeployHeliosV3 --rpc-url http://127.0.0.1:8545 --broadcast",
+    "deploy:mainnet": "forge script script/DeployV3.s.sol:DeployHeliosV3 --rpc-url $MAINNET_RPC_URL --broadcast --verify",
+    "verify": "forge verify-contract",
+    "clean": "forge clean",
+    "fmt": "forge fmt",
+    "lint": "solhint 'src/**/*.sol'"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

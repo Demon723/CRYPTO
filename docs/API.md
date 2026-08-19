@@ -1,4 +1,4 @@
-# Synex API Documentation
+# LXON API Documentation
 
 ## Base URL
 ```

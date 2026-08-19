@@ -1,111 +1,97 @@
-# Synex - AI-Powered Crypto Operating System
+# LXON Blockchain - Quantum-Resistant AI-Native Cryptocurrency
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Version](https://img.shields.io/badge/version-2.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
+![Status](https://img.shields.io/badge/status-Beta-orange)
+![Security](https://img.shields.io/badge/security-Audited-green)
 
-Synex is an AI-powered crypto operating system that helps you track assets, analyze transactions, and manage your crypto portfolio with advanced AI features.
+LXON is a sovereign, quantum-resistant, AI-native cryptocurrency platform with advanced blockchain technology, smart contracts, and multi-sig governance.
 
-## Features
+## Architecture
 
-### Core Features
-- Multi-wallet support (MetaMask, WalletConnect, Coinbase, Embedded)
-- Portfolio tracking and analytics
-- Real-time price alerts
-- Transaction history and analysis
+### Blockchain Engine (`apps/lxon-blockchain`)
+- Block-STM optimistic parallel execution engine
+- MonadDB asynchronous trie storage engine
+- RISCV zkVM prover stack with recursive SNARK compression
+- MonadBFT consensus with Narwhal mempool
+- WASM hotswap runtime
+- Oracle price feeds
+- Token execution engine with staking and governance
 
-### AI Features
-- Natural language transaction parsing
-- Portfolio analysis and insights
-- Smart contract analysis
-- Scam detection
-- Risk scoring
+### Smart Contracts (`apps/contracts`)
+- LXON token (ERC20 + governance + storage rent)
+- Staking and revenue distribution
+- Hardhat-based development and testing
 
-### Advanced Features
-- LXON chain integration
-- Embedded wallets with shard recovery
-- Governance voting
-- Token staking and rewards
-- Revenue sharing
-- WebSocket real-time updates
-- Developer API with key management
+### Helios Physical-Bound Tokens (`apps/contracts-helios`)
+- ERC721 NFTs bound to NFC chip public keys
+- Token Bound Accounts (ERC-6551) for premium coins
+- Amex-style card registry with Luhn checksum
+- Tap-to-pay via chip-signed transactions
+- Founder-gated lifecycle: activate, freeze, deactivate
+- Foundry-based development and testing
 
-## Tech Stack
+### Shared Types (`packages/shared`)
+- Common TypeScript types and utilities
+- Zod-based validation schemas
 
-### Backend
-- NestJS
-- Prisma ORM
-- SQLite (dev) / PostgreSQL (prod)
-- Redis (caching)
-- Socket.IO (WebSocket)
-- Swagger/OpenAPI
-
-### Frontend
-- Next.js 14
-- React 18
-- TypeScript
-- Tailwind CSS
-- shadcn/ui
-- Wagmi/RainbowKit (Web3)
+### Helios Types (`packages/helios-types`)
+- Helios-specific TypeScript types
+- Card number generation and validation
+- Tap-to-pay payload builders
+- Zod validation schemas
 
 ## Quick Start
 
 ### Prerequisites
 - Node.js 20+
 - pnpm 9+
+- Foundry (for Helios contracts)
 
 ### Installation
 
-1. Clone the repository
 ```bash
-git clone https://github.com/your-org/synex.git
-cd synex
-```
-
-2. Install dependencies
-```bash
+cd /Users/adikamble/LXON/LXON
 pnpm install
 ```
 
-3. Set up environment variables
-```bash
-cp apps/backend/.env.example apps/backend/.env
-cp apps/frontend/.env.example apps/frontend/.env.local
-```
-
-4. Run database setup
-```bash
-pnpm db:generate
-pnpm db:push
-```
-
-5. Start development servers
-```bash
-pnpm dev
-```
-
-6. Open http://localhost:3000
-
-## Docker
+### Usage
 
 ```bash
-docker compose -f infrastructure/docker/docker-compose.yml up -d
+# Run blockchain performance benchmarks
+pnpm demo
+
+# Build all packages
+pnpm build
+
+# Compile Hardhat smart contracts
+pnpm build:contracts
+
+# Compile Helios Foundry contracts
+pnpm build:contracts-helios
+
+# Run blockchain tests
+pnpm test:blockchain
+
+# Run Hardhat contract tests
+pnpm test:contracts
+
+# Run Helios Foundry tests
+pnpm test:contracts-helios
+
+# Run CLI with help
+pnpm cli
 ```
 
 ## Documentation
 
 - [API Documentation](docs/API.md)
-- [Deployment Guide](docs/DEPLOYMENT.md)
 - [Architecture](docs/ARCHITECTURE.md)
-
-## Testing
-
-```bash
-# Backend tests
-pnpm --filter backend test
-
-# Frontend tests
-pnpm --filter frontend test
-```
+- [Security Design](docs/SECURITY_DESIGN.md)
+- [Whitepaper](docs/WHITEPAPER.md)
+- [Helios Integration Guide](apps/contracts-helios/INTEGRATION_GUIDE.md)
+- [Helios Premium Guide](apps/contracts-helios/PREMIUM_GUIDE.md)
+- [Helios README](apps/contracts-helios/README.md)
 
 ## License
 

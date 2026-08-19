@@ -1,0 +1,109 @@
+version: "2.1"
+
+orbs:
+  aws-cli: circleci/aws-cli@5.0
+  terraform: circleci/terraform@1.4
+
+jobs:
+  build:
+    docker:
+      - image: cimg/node:20.20.2
+    steps:
+      - checkout
+      - run:
+          name: system
+          command: curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - && sudo apt-get install -y nodejs --no-install-recommends && sudo rm -rf /var/lib/apt/lists/* && sudo npm install -g pnpm
+      - run:
+          name: install
+          command: pnpm install
+      - run:
+          name: test
+          command: pnpm test
+      - run:
+          name: build
+          command: pnpm run build
+      - run:
+          name: lint
+          command: pnpm run lint || true
+      - store_artifacts:
+          path: /tmp/test-results
+          destination: test-results
+
+  deploy-staging:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - aws-cli/setup:
+          role-arn: arn:aws:iam::ACCOUNT_ID:role/CircleCIRole
+          region: us-east-1
+      - run:
+          name: Deploy to Staging
+          command: |
+            cd deploy/aws/terraform
+            terraform init -backend-config="bucket=lxon-terraform-state" -backend-config="key=staging/terraform.tfstate" -backend-config="region=us-east-1"
+            terraform workspace select staging || terraform workspace new staging
+            terraform plan -var-file="staging.tfvars" -out=tfplan
+            terraform apply tfplan
+      - run:
+          name: Update ECS Service
+          command: |
+            aws ecs update-service --cluster lxon-cluster --service lxon-node-service --force-new-deployment
+
+  deploy-production:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - aws-cli/setup:
+          role-arn: arn:aws:iam::ACCOUNT_ID:role/CircleCIRole
+          region: us-east-1
+      - run:
+          name: Build and Push Docker Images
+          command: |
+            aws ecr get-login-password | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com
+            docker build -t lxon-node:latest .
+            docker tag lixon-node:latest $AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/lixon-node:latest
+            docker push $AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/lixon-node:latest
+      - run:
+          name: Deploy to Production
+          command: |
+            cd deploy/aws/terraform
+            terraform init -backend-config="bucket=lxon-terraform-state" -backend-config="key=production/terraform.tfstate" -backend-config="region=us-east-1"
+            terraform workspace select production || terraform workspace new production
+            terraform plan -var-file="production.tfvars" -out=tfplan
+            terraform apply tfplan
+      - run:
+          name: Update ECS Service
+          command: |
+            aws ecs update-service --cluster lxon-cluster --service lxon-node-service --force-new-deployment
+      - run:
+          name: Run Database Migrations
+          command: |
+            aws ecs run-task --cluster lxon-cluster --task-definition lixon-migration --launch-type FARGATE
+
+workflows:
+  build:
+    jobs:
+      - build
+
+  deploy-staging:
+    jobs:
+      - build
+      - deploy-staging:
+          filters:
+            branches:
+              only: main
+          requires:
+            - build
+
+  deploy-production:
+    jobs:
+      - build
+      - deploy-production:
+          filters:
+            branches:
+              only: main
+          type: approval
+          requires:
+            - build

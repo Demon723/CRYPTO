@@ -1,63 +1,60 @@
 import { HardhatUserConfig } from 'hardhat/config';
 import '@nomicfoundation/hardhat-toolbox';
-import * as dotenv from 'dotenv';
-
-dotenv.config();
+import '@nomicfoundation/hardhat-verify';
+import 'dotenv/config';
 
 const config: HardhatUserConfig = {
   solidity: {
-    compilers: [
-      {
-        version: '0.8.26',
-        settings: {
-          evmVersion: 'cancun',
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-          viaIR: true,
-        },
+    version: '0.8.26',
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200
       },
-    ],
+      evmVersion: 'cancun'
+    }
   },
   networks: {
     hardhat: {
-      chainId: 31337,
+      chainId: 31337
     },
     localhost: {
-      url: 'http://127.0.0.1:8545',
-      chainId: 31337,
+      url: 'http://127.0.0.1:8545'
     },
-    sepolia: {
-      url: process.env.SEPOLIA_RPC_URL || '',
+    lxon: {
+      url: 'http://3.110.221.224:8545',
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 11155111,
+      chainId: 723
     },
-    base: {
-      url: process.env.BASE_RPC_URL || 'https://mainnet.base.org',
+    lxonnative: {
+      url: 'http://3.110.221.224:8545',
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 8453,
+      chainId: 723
+    },
+    lxonMainnet: {
+      url: process.env.LXON_RPC_URL || 'http://localhost:8545',
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 723
     },
     mainnet: {
       url: process.env.MAINNET_RPC_URL || '',
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 1,
-    },
+      chainId: 1
+    }
   },
   etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY || '',
+    apiKey: process.env.ETHERSCAN_API_KEY
   },
   gasReporter: {
-    enabled: process.env.REPORT_GAS === 'true',
-    currency: 'USD',
-    coinmarketcap: process.env.COINMARKETCAP_API_KEY || '',
+    enabled: true,
+    currency: 'USD'
   },
   paths: {
     sources: './contracts',
     tests: './test',
     cache: './cache',
-    artifacts: './artifacts',
-  },
+    artifacts: './artifacts'
+  }
 };
 
 export default config;

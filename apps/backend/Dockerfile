@@ -1,41 +1,24 @@
-FROM node:20-slim AS base
-
-FROM base AS deps
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    openssl \
-    python3 \
-    make \
-    g++ \
-  && rm -rf /var/lib/apt/lists/*
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-COPY apps/backend/package.json apps/backend/package-lock.json ./
-RUN npm install --omit=dev
-RUN npm install -g pnpm
+COPY package.json pnpm-lock.yaml ./
+COPY apps/backend/package.json ./apps/backend/
 
-FROM base AS builder
+RUN corepack enable && pnpm install --frozen-lockfile
+
+COPY apps/backend ./apps/backend
+
+RUN pnpm --filter lxon-backend build
+
+FROM node:22-alpine
+
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-
-RUN npm run build
-
-FROM base AS runner
-WORKDIR /app
-
-ENV NODE_ENV production
-
-RUN groupadd --system --gid 1001 nodejs && useradd --system --uid 1001 -g nodejs nestjs
 
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/apps/backend ./apps/backend
 COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/prisma ./prisma
 
-USER nestjs
+EXPOSE 3000
 
-EXPOSE 4000
-
-CMD ["node", "dist/main"]
+CMD ["pnpm", "--filter", "lixon-backend", "start:prod"]

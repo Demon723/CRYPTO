@@ -81,7 +81,7 @@ async function runBlockStmBenchmark() {
   console.log(`\n--- Workload A: Independent State Accounts ---`);
   console.log(`Sequential Execution: ${seqTimeIndep.toFixed(3)} ms`);
 
-  for (const threads of [1, 2, 4, 8]) {
+  for (const threads of [4, 8, 16]) {
     const engine = new BlockSTMEngine(independentTxs);
     
     // Seed initial values in MVDS for test
@@ -104,7 +104,7 @@ async function runBlockStmBenchmark() {
   console.log(`\n--- Workload B: High Contention (DEX Hotspot) ---`);
   console.log(`Sequential Execution: ${seqTimeConflict.toFixed(3)} ms`);
 
-  for (const threads of [1, 2, 4, 8]) {
+  for (const threads of [4, 8, 16]) {
     const engine = new BlockSTMEngine(conflictingTxs);
     
     // Seed pool initial state
@@ -131,7 +131,7 @@ async function runStorageBenchmark() {
   console.log('BENCHMARK 2: MonadDB Asynchronous Trie Storage Engine');
   console.log('================================================================');
 
-  const engine = new MonadDBStorageEngine('/dev/nvme0n1');
+  const engine = new MonadDBStorageEngine('/tmp/lxon-storage.img');
   const lookupRequests: [string, number][] = Array.from({ length: 40 }, (_, i) => [
     `trie_node_hash_0x${i.toString(16)}`,
     i * 4096 // Disk sector offsets
