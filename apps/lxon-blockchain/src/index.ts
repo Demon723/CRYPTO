@@ -31,3 +31,4 @@ export {
   ExecutionResult as TokenExecutionResult,
   TokenEngine,
 } from './token';
+export { LXONNode, NodeConfig } from './node';

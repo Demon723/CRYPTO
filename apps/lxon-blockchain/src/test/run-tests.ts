@@ -24,6 +24,7 @@ import {
 import * as assert from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 
 function testBlockSTM() {
   console.log('Testing Block-STM Parallel Engine...');
@@ -93,7 +94,7 @@ async function testWasmRuntime() {
   runtime.setCompatibility('1.0.0', ['1.0.1', '1.1.0']);
   runtime.setCompatibility('1.1.0', ['1.1.1', '1.2.0']);
 
-  const mockWasmPath = path.join('/tmp', 'test_module.wasm');
+  const mockWasmPath = path.join(os.tmpdir(), 'test_module.wasm');
   fs.writeFileSync(mockWasmPath, Buffer.from('mock-wasm-binary-v1'));
 
   const manifest1: ModuleManifest = {
@@ -164,7 +165,7 @@ async function testWasmGovernance() {
   const proposalResult = governance.createUpgradeProposal(
     'test_module',
     '1.0.1',
-    { name: 'test_module', version: '1.0.1', wasmPath: '/tmp/test.wasm' },
+    { name: 'test_module', version: '1.0.1', wasmPath: path.join(os.tmpdir(), 'test.wasm') },
     'validator-1',
   );
 
@@ -188,7 +189,7 @@ async function testWasmExecutor() {
 
   const executor = new WasmExecutor();
 
-  const mockWasmPath = path.join('/tmp', 'exec_test.wasm');
+  const mockWasmPath = path.join(os.tmpdir(), 'exec_test.wasm');
   fs.writeFileSync(mockWasmPath, Buffer.from('mock-wasm-exec-binary'));
 
   const runtime = new WasmRuntime();

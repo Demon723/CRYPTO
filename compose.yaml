@@ -52,6 +52,23 @@ services:
     depends_on:
       - backend
 
+  lxon-node:
+    image: lxon-blockchain-node
+    build:
+      context: apps/lxon-blockchain
+      dockerfile: ./Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 8545
+      CHAIN_ID: 723
+      NODE_ID: lxon-node-1
+      DATA_DIR: /data
+    ports:
+      - "127.0.0.1:8545:8545"
+    volumes:
+      - lxon_node_data:/data
+
 volumes:
   postgres_data:
   redis_data:
+  lxon_node_data:
