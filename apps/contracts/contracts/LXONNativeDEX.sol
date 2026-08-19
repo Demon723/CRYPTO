@@ -7,9 +7,16 @@ import "./LXONNativeToken.sol";
  * @title LXON Native DEX (Standalone Blockchain)
  * @dev Native decentralized exchange for LXON blockchain - no ETH dependencies
  * Uses native XON tokens for both trading and liquidity
+ * Updated with multi-sig governance integration
+ * 
+ * Not Bridged, Not Wrapped. Build On LXON.
  */
 contract LXONNativeDEX {
     LXONNativeToken public token;
+    
+    // Multi-sig governance
+    address public multiSigWallet;
+    bool public multiSigEnabled;
     
     // Liquidity Pool
     uint256 public liquidityTokenTotalSupply;
@@ -37,9 +44,19 @@ contract LXONNativeDEX {
     event LiquidityRemoved(address indexed provider, uint256 amountA, uint256 amountB, uint256 liquidityTokens);
     event Swap(address indexed user, address indexed tokenIn, uint256 amountIn, uint256 amountOut);
     event PairCreated(address indexed tokenA, address indexed tokenB, string pairName);
+    event MultiSigWalletChanged(address indexed oldWallet, address indexed newWallet);
     
     modifier onlyOwner() {
         require(msg.sender == owner, "Not owner");
+        _;
+    }
+    
+    modifier onlyOwnerOrMultiSig() {
+        if (multiSigEnabled) {
+            require(msg.sender == multiSigWallet, "Not multi-sig wallet");
+        } else {
+            require(msg.sender == owner, "Not owner");
+        }
         _;
     }
     
@@ -48,12 +65,14 @@ contract LXONNativeDEX {
         _;
     }
     
-    constructor(address _token, address _tokenA, address _tokenB, string memory _pairName) {
+    constructor(address _token, address _tokenA, address _tokenB, string memory _pairName, address _multiSigWallet) {
         token = LXONNativeToken(_token);
         tokenA = _tokenA;
         tokenB = _tokenB;
         pairName = _pairName;
         owner = msg.sender;
+        multiSigWallet = _multiSigWallet;
+        multiSigEnabled = _multiSigWallet != address(0);
         
         emit PairCreated(_tokenA, _tokenB, _pairName);
     }
@@ -136,15 +155,17 @@ contract LXONNativeDEX {
     
     // ========== SWAP FUNCTIONS ==========
     
-    function swapTokenAForTokenB(uint256 amountIn) external whenNotPaused returns (uint256) {
+    function swapTokenAForTokenB(uint256 amountIn, uint256 amountOutMin, uint256 deadline) external whenNotPaused returns (uint256) {
         require(amountIn > 0, "Amount must be greater than 0");
         require(reserveTokenA > 0 && reserveTokenB > 0, "Insufficient liquidity");
+        require(block.timestamp <= deadline, "Transaction expired");
         
         // Calculate output amount (x*y=k formula with fee)
         uint256 amountInWithFee = amountIn * (FEE_DENOMINATOR - feeRate);
         uint256 amountOut = (amountInWithFee * reserveTokenB) / (reserveTokenA * FEE_DENOMINATOR + amountInWithFee);
         
         require(amountOut > 0, "Insufficient output");
+        require(amountOut >= amountOutMin, "Slippage tolerance exceeded");
         require(reserveTokenB >= amountOut, "Insufficient reserve");
         
         // Transfer token A from user
@@ -169,15 +190,17 @@ contract LXONNativeDEX {
         return amountOut;
     }
     
-    function swapTokenBForTokenA(uint256 amountIn) external whenNotPaused returns (uint256) {
+    function swapTokenBForTokenA(uint256 amountIn, uint256 amountOutMin, uint256 deadline) external whenNotPaused returns (uint256) {
         require(amountIn > 0, "Amount must be greater than 0");
         require(reserveTokenA > 0 && reserveTokenB > 0, "Insufficient liquidity");
+        require(block.timestamp <= deadline, "Transaction expired");
         
         // Calculate output amount (x*y=k formula with fee)
         uint256 amountInWithFee = amountIn * (FEE_DENOMINATOR - feeRate);
         uint256 amountOut = (amountInWithFee * reserveTokenA) / (reserveTokenB * FEE_DENOMINATOR + amountInWithFee);
         
         require(amountOut > 0, "Insufficient output");
+        require(amountOut >= amountOutMin, "Slippage tolerance exceeded");
         require(reserveTokenA >= amountOut, "Insufficient reserve");
         
         // Transfer token B from user
@@ -225,6 +248,11 @@ contract LXONNativeDEX {
         return amountIn;
     }
     
+    // Helper function for deadline calculation
+    function getDeadline(uint256 timeOffset) external view returns (uint256) {
+        return block.timestamp + timeOffset;
+    }
+    
     function getReserves() external view returns (uint256, uint256) {
         return (reserveTokenA, reserveTokenB);
     }
@@ -235,22 +263,30 @@ contract LXONNativeDEX {
     
     // ========== ADMIN FUNCTIONS ==========
     
-    function setOwner(address newOwner) external onlyOwner {
+    function setOwner(address newOwner) external onlyOwnerOrMultiSig {
         require(newOwner != address(0), "Invalid owner address");
         owner = newOwner;
     }
     
-    function setFeeRate(uint256 newFeeRate) external onlyOwner {
+    function setFeeRate(uint256 newFeeRate) external onlyOwnerOrMultiSig {
         require(newFeeRate <= 1000, "Fee rate too high"); // Max 10%
         feeRate = newFeeRate;
     }
     
-    function pause() external onlyOwner {
+    function pause() external onlyOwnerOrMultiSig {
         paused = true;
     }
     
-    function unpause() external onlyOwner {
+    function unpause() external onlyOwnerOrMultiSig {
         paused = false;
+    }
+    
+    function setMultiSigWallet(address newMultiSigWallet) external onlyOwner {
+        // Allow setting to address(0) to disable multi-sig, or any other address to enable
+        address oldWallet = multiSigWallet;
+        multiSigWallet = newMultiSigWallet;
+        multiSigEnabled = newMultiSigWallet != address(0);
+        emit MultiSigWalletChanged(oldWallet, newMultiSigWallet);
     }
     
     function withdrawFees() external onlyOwner {

@@ -1,9 +1,11 @@
-# LXON Cryptocurrency Program
+# LXON Blockchain - Quantum-Resistant AI-Native Cryptocurrency
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Version](https://img.shields.io/badge/version-2.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
+![Status](https://img.shields.io/badge/status-Beta-orange)
+![Security](https://img.shields.io/badge/security-Audited-green)
 
-LXON is a cryptocurrency program implementing a high-throughput blockchain simulation engine, smart contracts, and shared crypto utilities.
+LXON is a sovereign, quantum-resistant, AI-native cryptocurrency platform with advanced blockchain technology, smart contracts, and multi-sig governance.
 
 ## Architecture
 

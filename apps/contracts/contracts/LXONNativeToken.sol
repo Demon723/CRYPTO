@@ -5,8 +5,35 @@ pragma solidity ^0.8.26;
  * @title LXON Native Token (Standalone Blockchain)
  * @dev Native token for LXON standalone blockchain - no ETH/ERC20 dependencies
  * This is the native currency of the LXON blockchain, similar to how ETH is native to Ethereum
+ * Updated with multi-sig governance integration
+ * 
+ * Not Bridged, Not Wrapped. Build On LXON.
  */
 contract LXONNativeToken {
+    // Reentrancy protection
+    uint256 private _status;
+    uint256 private constant _NOT_ENTERED = 1;
+    uint256 private constant _ENTERED = 2;
+    
+    // Multi-sig governance
+    address public multiSigWallet;
+    bool public multiSigEnabled;
+    
+    modifier nonReentrant() {
+        require(_status != _ENTERED, "Reentrant call");
+        _status = _ENTERED;
+        _;
+        _status = _NOT_ENTERED;
+    }
+    
+    modifier onlyOwnerOrMultiSig() {
+        if (multiSigEnabled) {
+            require(msg.sender == multiSigWallet, "Not multi-sig wallet");
+        } else {
+            require(msg.sender == owner, "Not owner");
+        }
+        _;
+    }
     // Token State
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
@@ -39,6 +66,7 @@ contract LXONNativeToken {
     // Mining/Staking
     mapping(address => uint256) public stakedBalance;
     mapping(address => uint256) public stakingTimestamp;
+    uint256 public totalStaked; // Track total staked amount
     uint256 public constant STAKING_REWARD_RATE = 5; // 5% annual reward
     uint256 public constant STAKING_LOCK_PERIOD = 30 days;
     
@@ -47,9 +75,12 @@ contract LXONNativeToken {
     event Approval(address indexed owner, address indexed spender, uint256 value);
     event Minted(address indexed to, uint256 amount, uint256 day);
     event BlockReward(address indexed miner, uint256 reward);
+    event BlockRewardChanged(uint256 oldReward, uint256 newReward);
     event Staked(address indexed user, uint256 amount);
     event Unstaked(address indexed user, uint256 amount);
     event StakeReward(address indexed user, uint256 reward);
+    event MultiSigWalletChanged(address indexed oldWallet, address indexed newWallet);
+    event MultiSigEnabled(bool enabled);
     
     // Roles
     address public owner;
@@ -71,9 +102,11 @@ contract LXONNativeToken {
         _;
     }
     
-    constructor() {
+    constructor(address _multiSigWallet) {
         owner = msg.sender;
         mintAuthority = msg.sender;
+        multiSigWallet = _multiSigWallet;
+        multiSigEnabled = _multiSigWallet != address(0);
         emissionStartTime = block.timestamp;
         currentDailyEmission = DAILY_EMISSION_INITIAL;
         blockReward = BASE_BLOCK_REWARD;
@@ -84,6 +117,8 @@ contract LXONNativeToken {
     function transfer(address to, uint256 value) external whenNotPaused returns (bool) {
         require(balanceOf[msg.sender] >= value, "Insufficient balance");
         require(to != address(0), "Cannot transfer to zero address");
+        require(to != address(this), "Cannot transfer to contract");
+        require(value <= balanceOf[msg.sender], "Insufficient balance");
         
         balanceOf[msg.sender] -= value;
         balanceOf[to] += value;
@@ -93,6 +128,9 @@ contract LXONNativeToken {
     }
     
     function approve(address spender, uint256 value) external whenNotPaused returns (bool) {
+        require(spender != address(0), "Cannot approve zero address");
+        require(spender != msg.sender, "Cannot approve self");
+        
         allowance[msg.sender][spender] = value;
         emit Approval(msg.sender, spender, value);
         return true;
@@ -102,6 +140,8 @@ contract LXONNativeToken {
         require(balanceOf[from] >= value, "Insufficient balance");
         require(allowance[from][msg.sender] >= value, "Allowance exceeded");
         require(to != address(0), "Cannot transfer to zero address");
+        require(to != address(this), "Cannot transfer to contract");
+        require(value <= balanceOf[from], "Insufficient balance");
         
         balanceOf[from] -= value;
         balanceOf[to] += value;
@@ -114,8 +154,11 @@ contract LXONNativeToken {
     // ========== MINTING FUNCTIONS ==========
     
     function mint(address to, uint256 amount) external onlyMintAuthority whenNotPaused {
+        require(amount > 0, "Amount must be greater than 0");
+        require(amount <= MAX_SUPPLY / 1000, "Single mint too large"); // Max 0.1% of supply per mint
         require(totalEmitted + amount <= MAX_SUPPLY, "Exceeds max supply");
         require(to != address(0), "Cannot mint to zero address");
+        require(to != address(this), "Cannot mint to contract");
         
         totalSupply += amount;
         totalEmitted += amount;
@@ -179,7 +222,11 @@ contract LXONNativeToken {
     }
     
     function setBlockReward(uint256 newReward) external onlyOwner {
+        require(newReward <= 100 * 10**18, "Block reward too high"); // Max 100 XON
+        require(newReward >= 1 * 10**18, "Block reward too low"); // Min 1 XON
+        uint256 oldReward = blockReward;
         blockReward = newReward;
+        emit BlockRewardChanged(oldReward, newReward);
     }
     
     // ========== STAKING FUNCTIONS ==========
@@ -191,12 +238,13 @@ contract LXONNativeToken {
         balanceOf[msg.sender] -= amount;
         stakedBalance[msg.sender] += amount;
         stakingTimestamp[msg.sender] = block.timestamp;
+        totalStaked += amount;
         
         emit Transfer(msg.sender, address(this), amount);
         emit Staked(msg.sender, amount);
     }
     
-    function unstake(uint256 amount) external whenNotPaused {
+    function unstake(uint256 amount) external whenNotPaused nonReentrant {
         require(stakedBalance[msg.sender] >= amount, "Insufficient staked balance");
         require(block.timestamp >= stakingTimestamp[msg.sender] + STAKING_LOCK_PERIOD, "Staking lock period not met");
         
@@ -204,6 +252,7 @@ contract LXONNativeToken {
         uint256 reward = calculateStakingReward(msg.sender, amount);
         
         stakedBalance[msg.sender] -= amount;
+        totalStaked -= amount;
         balanceOf[msg.sender] += amount + reward;
         totalSupply += reward;
         totalEmitted += reward;
@@ -243,22 +292,41 @@ contract LXONNativeToken {
     
     // ========== ADMIN FUNCTIONS ==========
     
-    function setOwner(address newOwner) external onlyOwner {
+    function setOwner(address newOwner) external onlyOwnerOrMultiSig {
         require(newOwner != address(0), "Invalid owner address");
         owner = newOwner;
     }
     
-    function setMintAuthority(address newMintAuthority) external onlyOwner {
+    function setMintAuthority(address newMintAuthority) external onlyOwnerOrMultiSig {
         require(newMintAuthority != address(0), "Invalid mint authority");
         mintAuthority = newMintAuthority;
     }
     
-    function pause() external onlyOwner {
+    function pause() external onlyOwnerOrMultiSig {
         paused = true;
     }
     
-    function unpause() external onlyOwner {
+    function unpause() external onlyOwnerOrMultiSig {
         paused = false;
+    }
+    
+    function setMultiSigWallet(address newMultiSigWallet) external onlyOwner {
+        // Allow setting to zero address to disable, or any valid address to enable
+        address oldWallet = multiSigWallet;
+        multiSigWallet = newMultiSigWallet;
+        multiSigEnabled = newMultiSigWallet != address(0);
+        emit MultiSigWalletChanged(oldWallet, newMultiSigWallet);
+    }
+    
+    function enableMultiSig() external onlyOwner {
+        require(multiSigWallet != address(0), "Multi-sig wallet not set");
+        multiSigEnabled = true;
+        emit MultiSigEnabled(true);
+    }
+    
+    function disableMultiSig() external onlyOwner {
+        multiSigEnabled = false;
+        emit MultiSigEnabled(false);
     }
     
     // ========== VIEW FUNCTIONS ==========
@@ -276,8 +344,6 @@ contract LXONNativeToken {
     }
     
     function getTotalStaked() external view returns (uint256) {
-        uint256 totalStaked = 0;
-        // Note: This is O(n) - in production, use a counter
         return totalStaked;
     }
 }
