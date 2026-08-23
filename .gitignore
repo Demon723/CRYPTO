@@ -8,3 +8,6 @@ deployments/
 .env.*.local
 *.log
 .DS_Store
+aws/
+node_modules/
+*.lock
