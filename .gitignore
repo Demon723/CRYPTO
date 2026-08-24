@@ -11,3 +11,4 @@ deployments/
 aws/
 node_modules/
 *.lock
+node_modules/
