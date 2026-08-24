@@ -48,4 +48,43 @@ contract LXONGovernance is Ownable, IERC6372 {
     function votingPeriod() public pure returns (uint256) {
         return VOTING_PERIOD;
     }
+    
+    // ========== ENHANCED INTEGRATION FUNCTIONS ==========
+    
+    /**
+     * @notice Calculate enhanced voting power with stellar multipliers
+     * @dev Integration with stellar tokenomics for governance power calculation
+     */
+    function calculateEnhancedVotingPower(address voter, uint256 stellarMultiplier) public view returns (uint256) {
+        uint256 basePower = lxonToken.balanceOf(voter);
+        uint256 enhancedPower = (basePower * stellarMultiplier) / 100;
+        return enhancedPower;
+    }
+    
+    /**
+     * @notice Check if voter has phygital token with governance power
+     * @dev Integration with phygital bridge for physical governance rights
+     */
+    function hasPhygitalGovernancePower(address voter) public view returns (bool) {
+        // This would need integration with phygital bridge
+        // Simplified for now
+        return lxonToken.balanceOf(voter) > 0;
+    }
+    
+    /**
+     * @notice Get enhanced quorum requirements for stellar-tiered proposals
+     */
+    function getEnhancedQuorum(uint256 stellarTier) public pure returns (uint256) {
+        if (stellarTier == 0) return QUORUM * 2; // Genesis tier requires 2x quorum
+        if (stellarTier == 4) return QUORUM * 15 / 10; // Supernova tier requires 1.5x quorum
+        return QUORUM; // Standard quorum for other tiers
+    }
+    
+    /**
+     * @notice Check if proposal requires enhanced quorum
+     */
+    function requiresEnhancedQuorum(uint256 proposalId) public pure returns (bool) {
+        // In production, would check proposal metadata
+        return false;
+    }
 }

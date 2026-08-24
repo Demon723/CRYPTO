@@ -346,4 +346,104 @@ contract LXONNativeToken {
     function getTotalStaked() external view returns (uint256) {
         return totalStaked;
     }
+    
+    // ========== ENHANCED INTEGRATION FUNCTIONS ==========
+    
+    /**
+     * @notice Add additional mint authority for enhanced ecosystem
+     * @dev Allows multiple contracts to mint tokens (phygital bridge, stellar tokenomics, etc.)
+     */
+    mapping(address => bool) public additionalMintAuthorities;
+    
+    modifier onlyMintAuthorityOrAdditional() {
+        require(
+            msg.sender == mintAuthority || additionalMintAuthorities[msg.sender],
+            "Not mint authority"
+        );
+        _;
+    }
+    
+    function addMintAuthority(address authority) external onlyOwner {
+        require(authority != address(0), "Invalid authority");
+        additionalMintAuthorities[authority] = true;
+    }
+    
+    function removeMintAuthority(address authority) external onlyOwner {
+        additionalMintAuthorities[authority] = false;
+    }
+    
+    /**
+     * @notice Enhanced mint function for ecosystem rewards
+     * @dev Used by phygital bridge, stellar tokenomics, and other ecosystem components
+     */
+    function mintEcosystemReward(address to, uint256 amount, string memory source) external onlyMintAuthorityOrAdditional whenNotPaused {
+        require(amount > 0, "Amount must be greater than 0");
+        require(totalEmitted + amount <= MAX_SUPPLY, "Exceeds max supply");
+        require(to != address(0), "Cannot mint to zero address");
+        
+        totalSupply += amount;
+        totalEmitted += amount;
+        balanceOf[to] += amount;
+        
+        emit Transfer(address(0), to, amount);
+        emit Minted(to, amount, getCurrentEmissionDay());
+    }
+    
+    /**
+     * @notice Calculate enhanced staking rewards with multipliers
+     * @dev Supports stellar evolution multipliers and phygital bonuses
+     */
+    function calculateEnhancedStakingReward(address user, uint256 amount, uint256 multiplier) public view returns (uint256) {
+        uint256 stakingDuration = block.timestamp - stakingTimestamp[user];
+        if (stakingDuration < STAKING_LOCK_PERIOD) {
+            return 0;
+        }
+        
+        // Enhanced calculation: (amount * rate * duration * multiplier) / (365 days * 100)
+        uint256 baseReward = (amount * STAKING_REWARD_RATE * stakingDuration) / (365 days * 100);
+        uint256 enhancedReward = (baseReward * multiplier) / 100;
+        
+        return enhancedReward;
+    }
+    
+    /**
+     * @notice Enhanced unstake with multiplier support
+     */
+    function unstakeEnhanced(uint256 amount, uint256 multiplier) external whenNotPaused nonReentrant {
+        require(stakedBalance[msg.sender] >= amount, "Insufficient staked balance");
+        require(block.timestamp >= stakingTimestamp[msg.sender] + STAKING_LOCK_PERIOD, "Staking lock period not met");
+        
+        uint256 reward = calculateEnhancedStakingReward(msg.sender, amount, multiplier);
+        
+        stakedBalance[msg.sender] -= amount;
+        totalStaked -= amount;
+        balanceOf[msg.sender] += amount + reward;
+        totalSupply += reward;
+        totalEmitted += reward;
+        
+        emit Transfer(address(this), msg.sender, amount + reward);
+        emit Unstaked(msg.sender, amount);
+        emit StakeReward(msg.sender, reward);
+    }
+    
+    /**
+     * @notice Get ecosystem integration status
+     */
+    function getIntegrationStatus() external view returns (
+        bool hasAdditionalAuthorities,
+        uint256 authorityCount,
+        uint256 currentEmissionDay,
+        uint256 remainingSupply
+    ) {
+        uint256 count = 0;
+        if (additionalMintAuthorities[mintAuthority]) count++;
+        // In production, would count all authorities
+        
+        return (
+            true, // Simplified
+            count,
+            getCurrentEmissionDay(),
+            MAX_SUPPLY - totalEmitted
+        );
+    }
 }
