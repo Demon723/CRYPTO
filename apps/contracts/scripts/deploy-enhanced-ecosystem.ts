@@ -107,9 +107,27 @@ async function main() {
   console.log('✅ Space Heritage deployed to:', spaceHeritageAddress);
 
   // ============================================================
-  // PHASE 6: Deploy Master Integration
+  // PHASE 6: Deploy Buyback and Burn Mechanism
   // ============================================================
-  console.log('\n🔗 Phase 6: Deploying Master Integration...');
+  console.log('\n🔥 Phase 6: Deploying Buyback and Burn Mechanism...');
+  
+  // For testing, use LXON token as base token (in production, use USDC or similar)
+  const buybackBurn = await ethers.deployContract('LXONBuybackBurn', [
+    lxonTokenAddress,
+    lxonTokenAddress, // Using LXON as base token for testing
+    deployer.address, // Treasury (deployer for testing)
+    ethers.parseEther('0.01'), // Buyback threshold: $0.01 per LXON
+    10 // 10% of treasury per buyback
+  ]);
+  await buybackBurn.waitForDeployment();
+  
+  const buybackBurnAddress = await buybackBurn.getAddress();
+  console.log('✅ Buyback and Burn deployed to:', buybackBurnAddress);
+
+  // ============================================================
+  // PHASE 7: Deploy Master Integration
+  // ============================================================
+  console.log('\n🔗 Phase 7: Deploying Master Integration...');
   
   const masterIntegration = await ethers.deployContract('LXONMasterIntegration', [
     lxonTokenAddress,
@@ -127,9 +145,9 @@ async function main() {
   console.log('✅ Master Integration deployed to:', masterIntegrationAddress);
 
   // ============================================================
-  // PHASE 7: Configuration and Integration
+  // PHASE 8: Configuration and Integration
   // ============================================================
-  console.log('\n⚙️  Phase 7: Configuring System Integration...');
+  console.log('\n⚙️  Phase 8: Configuring System Integration...');
 
   // Grant mint authority to enhanced components
   console.log('  - Configuring mint authorities...');
@@ -147,9 +165,9 @@ async function main() {
   console.log('  ✅ Master integration enabled');
 
   // ============================================================
-  // PHASE 8: Initialize Stellar Systems
+  // PHASE 9: Initialize Stellar Systems
   // ============================================================
-  console.log('\n🌟 Phase 8: Initializing Stellar Evolution Systems...');
+  console.log('\n🌟 Phase 9: Initializing Stellar Evolution Systems...');
 
   // Create some initial stellar systems
   const stellarSystems = [
@@ -173,9 +191,9 @@ async function main() {
   }
 
   // ============================================================
-  // PHASE 9: Register Sample Space Heritage
+  // PHASE 10: Register Sample Space Heritage
   // ============================================================
-  console.log('\n🏛️  Phase 9: Registering Sample Space Heritage...');
+  console.log('\n🏛️  Phase 10: Registering Sample Space Heritage...');
 
   // Register a sample Apollo artifact
   const spaceHeritageContract = await ethers.getContractAt('LXONSpaceHeritage', spaceHeritageAddress);
@@ -213,9 +231,9 @@ async function main() {
   console.log('  ✅ Certified as Heritage Grade artifact');
 
   // ============================================================
-  // PHASE 10: Create Sample Phygital Token
+  // PHASE 11: Create Sample Phygital Token
   // ============================================================
-  console.log('\n🪙 Phase 10: Creating Sample Phygital Token...');
+  console.log('\n🪙 Phase 11: Creating Sample Phygital Token...');
 
   const sampleChipPublicKey = ethers.keccak256(ethers.toUtf8Bytes('SAMPLE_NTAG_424_DNA_CHIP_001'));
   const sampleMaterialHash = ethers.keccak256(ethers.toUtf8Bytes('SPACE_HERITAGE_MATERIAL_001'));
@@ -250,9 +268,9 @@ async function main() {
   console.log('  ✅ Linked phygital token to stellar system');
 
   // ============================================================
-  // PHASE 11: Create Sample Hardware Wallet
+  // PHASE 12: Create Sample Hardware Wallet
   // ============================================================
-  console.log('\n💳 Phase 11: Creating Sample Hardware Wallet...');
+  console.log('\n💳 Phase 12: Creating Sample Hardware Wallet...');
 
   const walletChipPublicKey = ethers.keccak256(ethers.toUtf8Bytes('WALLET_NTAG_424_DNA_CHIP_001'));
   const hardwareWalletContract = await ethers.getContractAt('LXONHardwareWallet', hardwareWalletAddress);
@@ -289,6 +307,7 @@ async function main() {
   console.log(`Stellar Tokenomics:      ${stellarTokenomicsAddress}`);
   console.log(`Hardware Wallet:         ${hardwareWalletAddress}`);
   console.log(`Space Heritage:           ${spaceHeritageAddress}`);
+  console.log(`Buyback and Burn:        ${buybackBurnAddress}`);
   console.log(`Master Integration:      ${masterIntegrationAddress}`);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   
@@ -300,6 +319,9 @@ async function main() {
   console.log('  ✅ Quantum-resistant storage options');
   console.log('  ✅ Emergency recovery systems');
   console.log('  ✅ Chain of custody verification');
+  console.log('  ✅ Buyback and burn mechanism');
+  console.log('  ✅ Transaction burn fee (1%)');
+  console.log('  ✅ Tiered staking rewards (4 tiers)');
   
   console.log('\n🔮 Next Steps:');
   console.log('  1. Configure multi-sig wallets for production');
@@ -332,6 +354,7 @@ async function main() {
     stellarTokenomics: stellarTokenomicsAddress,
     hardwareWallet: hardwareWalletAddress,
     spaceHeritage: spaceHeritageAddress,
+    buybackBurn: buybackBurnAddress,
     masterIntegration: masterIntegrationAddress,
     deployer: deployer.address,
     deploymentDate: new Date().toISOString(),

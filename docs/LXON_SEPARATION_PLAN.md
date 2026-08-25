@@ -56,8 +56,7 @@ lxon/
 ├── packages/
 │   └── shared/             # Shared utilities
 ├── infrastructure/
-│   ├── docker/
-│   └── railway/
+│   └── docker/
 └── package.json
 ```
 
@@ -152,13 +151,13 @@ class LXONApiClient {
 #### 4.2 Environment Variables
 **SYNEX Backend:**
 ```bash
-LXON_API_URL=https://lxon-api.up.railway.app
-LXON_WS_URL=wss://lxon-api.up.railway.app
+LXON_API_URL=https://lxon-api.yourdomain.com
+LXON_WS_URL=wss://lxon-api.yourdomain.com
 ```
 
 **LXON API:**
 ```bash
-SYNEX_API_URL=https://synex-47.up.railway.app/api/v1
+SYNEX_API_URL=https://synex-api.yourdomain.com/api/v1
 SYNEX_API_KEY=<shared_secret>
 ```
 
@@ -171,7 +170,7 @@ SYNEX_API_KEY=<shared_secret>
 
 #### 5.1 LXON Deployment Architecture
 ```
-LXON Project (Railway)
+LXON Project
 ├── LXON API Service (NestJS)
 ├── LXON Blockchain Engine (Node.js)
 ├── PostgreSQL (blocks, transactions)
@@ -179,7 +178,7 @@ LXON Project (Railway)
 ```
 
 #### 5.2 Deployment Steps
-1. Create Railway project for LXON
+1. Create deployment project for LXON
 2. Deploy LXON API service
 3. Deploy LXON blockchain engine
 4. Configure databases
@@ -187,9 +186,9 @@ LXON Project (Railway)
 6. Test API endpoints
 7. Configure CORS for SYNEX
 
-#### 5.3 Render Deployment (Alternative)
-- Deploy LXON API to Render
-- Deploy blockchain engine to Railway
+#### 5.3 Alternative Deployment Options
+- Deploy LXON API to cloud provider of choice
+- Deploy blockchain engine to infrastructure of choice
 - Configure cross-platform communication
 
 ### Phase 6: Testing & Migration
