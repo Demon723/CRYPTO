@@ -36,6 +36,11 @@ const config: HardhatUserConfig = {
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 723
     },
+    gce: {
+      url: process.env.GCE_RPC_URL || 'http://3.110.221.224:8545',
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 723
+    },
     mainnet: {
       url: process.env.MAINNET_RPC_URL || '',
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
