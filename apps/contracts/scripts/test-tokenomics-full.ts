@@ -113,6 +113,7 @@ async function main() {
   // Test 3: Stake with Tier 1
   console.log('🎯 Test 3: Stake with Tier 1 (30 days)');
   const stakeAmount1 = ethers.parseEther('500');
+  await token.mint(staker1.address, stakeAmount1);
   await (token.connect(staker1) as any).stakeWithTier(stakeAmount1, 1);
   const [staked1, reward1, canUnstake1, tier1, lockPeriod1] = await token.getStakingInfo(staker1.address);
   console.log('  ✅ Staker 1 staked 500 LXON with Tier 1');
@@ -124,6 +125,7 @@ async function main() {
   // Test 4: Stake with Tier 2
   console.log('🎯 Test 4: Stake with Tier 2 (90 days)');
   const stakeAmount2 = ethers.parseEther('500');
+  await token.mint(staker2.address, stakeAmount2);
   await (token.connect(staker2) as any).stakeWithTier(stakeAmount2, 2);
   const [staked2, reward2, canUnstake2, tier2, lockPeriod2] = await token.getStakingInfo(staker2.address);
   console.log('  ✅ Staker 2 staked 500 LXON with Tier 2');
@@ -135,6 +137,7 @@ async function main() {
   // Test 5: Stake with Tier 3
   console.log('🎯 Test 5: Stake with Tier 3 (180 days)');
   const stakeAmount3 = ethers.parseEther('500');
+  await token.mint(staker3.address, stakeAmount3);
   await (token.connect(staker3) as any).stakeWithTier(stakeAmount3, 3);
   const [staked3, reward3, canUnstake3, tier3, lockPeriod3] = await token.getStakingInfo(staker3.address);
   console.log('  ✅ Staker 3 staked 500 LXON with Tier 3');
