@@ -32,7 +32,7 @@ const config: HardhatUserConfig = {
       chainId: 723
     },
     lxonMainnet: {
-      url: process.env.LXON_RPC_URL || 'http://localhost:8545',
+      url: process.env.LXON_RPC_URL || 'http://3.110.221.224:8545',
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 723
     },
@@ -42,9 +42,14 @@ const config: HardhatUserConfig = {
       chainId: 1
     },
     sepolia: {
-      url: process.env.SEPOLIA_RPC_URL || 'https://rpc.sepolia.org',
+      url:
+        process.env.SEPOLIA_RPC_URL ||
+        (process.env.INFURA_API_KEY
+          ? `https://sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`
+          : 'https://ethereum-sepolia-rpc.publicnode.com'),
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 11155111
+      chainId: 11155111,
+      timeout: 120_000
     }
   },
   etherscan: {
