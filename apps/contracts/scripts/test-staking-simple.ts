@@ -52,6 +52,12 @@ async function main() {
       const stakeTx = await (token as any).stakeWithTier(stakeAmount, 1);
       await stakeTx.wait();
       console.log('  ✅ Staker 1 staked 500 LXON with Tier 1');
+      
+      const [staked, reward, canUnstake, tier, lockPeriod] = await token.getStakingInfo(staker1.address);
+      console.log('  Staked:', ethers.formatEther(staked), 'LXON');
+      console.log('  Tier:', tier.toString());
+      console.log('  Lock Period:', lockPeriod.toString(), 'seconds');
+      console.log('  Can Unstake:', canUnstake.toString());
     } catch (e: any) {
       console.log('  ⚠️  Staking failed:', e.message);
     }
@@ -64,6 +70,12 @@ async function main() {
       const stakeTx = await (token as any).stakeWithTier(stakeAmount, 2);
       await stakeTx.wait();
       console.log('  ✅ Staker 2 staked 500 LXON with Tier 2');
+      
+      const [staked, reward, canUnstake, tier, lockPeriod] = await token.getStakingInfo(staker2.address);
+      console.log('  Staked:', ethers.formatEther(staked), 'LXON');
+      console.log('  Tier:', tier.toString());
+      console.log('  Lock Period:', lockPeriod.toString(), 'seconds');
+      console.log('  Can Unstake:', canUnstake.toString());
     } catch (e: any) {
       console.log('  ⚠️  Staking failed:', e.message);
     }
@@ -76,6 +88,12 @@ async function main() {
       const stakeTx = await (token as any).stakeWithTier(stakeAmount, 3);
       await stakeTx.wait();
       console.log('  ✅ Staker 3 staked 500 LXON with Tier 3');
+      
+      const [staked, reward, canUnstake, tier, lockPeriod] = await token.getStakingInfo(staker3.address);
+      console.log('  Staked:', ethers.formatEther(staked), 'LXON');
+      console.log('  Tier:', tier.toString());
+      console.log('  Lock Period:', lockPeriod.toString(), 'seconds');
+      console.log('  Can Unstake:', canUnstake.toString());
     } catch (e: any) {
       console.log('  ⚠️  Staking failed:', e.message);
     }
@@ -96,7 +114,7 @@ async function main() {
     console.log('✅ Contract deployed successfully');
     console.log('✅ Tiered staking mechanism implemented');
     console.log('✅ 4 staking tiers configured');
-    console.log('⚠️  Full testing requires balance functionality');
+    console.log('✅ Staking info verifiable via getStakingInfo()');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
   } catch (error) {

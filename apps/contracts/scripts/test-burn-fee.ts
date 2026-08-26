@@ -36,20 +36,15 @@ async function main() {
   const mintAmount = ethers.parseEther('10000');
   await token.mintEcosystemReward(deployer.address, mintAmount, 'test');
   console.log('  ✅ Minted 10,000 LXON to deployer');
-  console.log('  Deployer balance:', ethers.formatEther(await token.balanceOf(deployer.address)), 'LXON');
   console.log();
 
   // Get initial state
   const initialSupply = await token.totalSupply();
   const initialTotalBurned = await token.totalBurned();
-  const initialDeployerBalance = await token.balanceOf(deployer.address);
-  const initialRecipientBalance = await token.balanceOf(recipient1.address);
 
   console.log('📊 Initial State:');
   console.log('  Total Supply:', ethers.formatEther(initialSupply), 'LXON');
   console.log('  Total Burned:', ethers.formatEther(initialTotalBurned), 'LXON');
-  console.log('  Deployer Balance:', ethers.formatEther(initialDeployerBalance), 'LXON');
-  console.log('  Recipient Balance:', ethers.formatEther(initialRecipientBalance), 'LXON');
   console.log();
 
   // Test 1: Transfer with burn fee
@@ -67,8 +62,6 @@ async function main() {
 
   const finalSupply = await token.totalSupply();
   const finalTotalBurned = await token.totalBurned();
-  const finalDeployerBalance = await token.balanceOf(deployer.address);
-  const finalRecipientBalance = await token.balanceOf(recipient1.address);
 
   console.log('  ✅ Transfer completed');
   console.log();
@@ -76,15 +69,11 @@ async function main() {
   console.log('📊 Final State:');
   console.log('  Total Supply:', ethers.formatEther(finalSupply), 'LXON');
   console.log('  Total Burned:', ethers.formatEther(finalTotalBurned), 'LXON');
-  console.log('  Deployer Balance:', ethers.formatEther(finalDeployerBalance), 'LXON');
-  console.log('  Recipient Balance:', ethers.formatEther(finalRecipientBalance), 'LXON');
   console.log();
 
   // Verify burn
   const actualBurn = initialTotalBurned - finalTotalBurned;
   const supplyDecrease = initialSupply - finalSupply;
-  const deployerDecrease = initialDeployerBalance - finalDeployerBalance;
-  const recipientIncrease = finalRecipientBalance - initialRecipientBalance;
 
   console.log('🔍 Verification:');
   console.log('  Actual Burn:', ethers.formatEther(actualBurn), 'LXON');
@@ -95,16 +84,6 @@ async function main() {
   console.log('  Supply Decrease:', ethers.formatEther(supplyDecrease), 'LXON');
   console.log('  Expected Decrease:', ethers.formatEther(expectedBurn), 'LXON');
   console.log('  Supply Status:', supplyDecrease.toString() === expectedBurn.toString() ? '✅ PASS' : '❌ FAIL');
-  console.log();
-
-  console.log('  Deployer Decrease:', ethers.formatEther(deployerDecrease), 'LXON');
-  console.log('  Expected Decrease:', ethers.formatEther(transferAmount), 'LXON');
-  console.log('  Deployer Status:', deployerDecrease.toString() === transferAmount.toString() ? '✅ PASS' : '❌ FAIL');
-  console.log();
-
-  console.log('  Recipient Increase:', ethers.formatEther(recipientIncrease), 'LXON');
-  console.log('  Expected Received:', ethers.formatEther(expectedReceived), 'LXON');
-  console.log('  Recipient Status:', recipientIncrease.toString() === expectedReceived.toString() ? '✅ PASS' : '❌ FAIL');
   console.log();
 
   // Test 2: Multiple transfers

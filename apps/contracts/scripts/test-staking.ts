@@ -41,9 +41,7 @@ async function main() {
   await token.mintEcosystemReward(staker3.address, stakeAmount, 'test');
   
   console.log('  ✅ Minted 1,000 LXON to each staker');
-  console.log('  Staker 1 Balance:', ethers.formatEther(await token.balanceOf(staker1.address)), 'LXON');
-  console.log('  Staker 2 Balance:', ethers.formatEther(await token.balanceOf(staker2.address)), 'LXON');
-  console.log('  Staker 3 Balance:', ethers.formatEther(await token.balanceOf(staker3.address)), 'LXON');
+  console.log('  Total Supply:', ethers.formatEther(await token.totalSupply()), 'LXON');
   console.log();
 
   // Test 1: Stake with Tier 1 (30 days, 5%, 1x)

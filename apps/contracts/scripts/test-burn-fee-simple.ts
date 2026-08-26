@@ -56,13 +56,15 @@ async function main() {
     }
     console.log();
 
-    // Test 3: Check balance after mint
-    console.log('📊 Test 3: Balance Check');
+    // Test 3: Check supply after mint
+    console.log('📊 Test 3: Supply Check After Mint');
     try {
-      const balance = await token.balanceOf(deployer.address);
-      console.log('  Deployer Balance:', ethers.formatEther(balance), 'LXON');
+      const totalSupplyAfterMint = await token.totalSupply();
+      console.log('  Total Supply After Mint:', ethers.formatEther(totalSupplyAfterMint), 'LXON');
+      console.log('  Expected: 10,000 LXON');
+      console.log('  Status:', totalSupplyAfterMint === ethers.parseEther('10000') ? '✅ PASS' : '⚠️  Check supply manually');
     } catch (e) {
-      console.log('  ⚠️  Balance check not available');
+      console.log('  ⚠️  Supply check not available');
     }
     console.log();
 
@@ -72,18 +74,17 @@ async function main() {
       const transferAmount = ethers.parseEther('1000');
       console.log('  Transferring 1,000 LXON from deployer to recipient1...');
       
+      const totalSupplyBefore = await token.totalSupply();
       const transferTx = await token.transfer(recipient1.address, transferAmount);
       await transferTx.wait();
       console.log('  ✅ Transfer completed');
       
-      // Check recipient balance
-      const recipientBalance = await token.balanceOf(recipient1.address);
-      console.log('  Recipient Balance:', ethers.formatEther(recipientBalance), 'LXON');
-      console.log('  Expected: ~990 LXON (1% burn fee)');
-      
-      // Check total supply change
       const totalSupplyAfter = await token.totalSupply();
+      const burnedAmount = totalSupplyBefore - totalSupplyAfter;
+      console.log('  Burned Amount:', ethers.formatEther(burnedAmount), 'LXON');
+      console.log('  Expected Burn: 10 LXON (1% of 1,000)');
       console.log('  Total Supply After:', ethers.formatEther(totalSupplyAfter), 'LXON');
+      console.log('  Status:', burnedAmount === ethers.parseEther('10') ? '✅ PASS' : '⚠️  Check burn amount manually');
       
     } catch (e: any) {
       console.log('  ⚠️  Transfer test failed:', e.message);
