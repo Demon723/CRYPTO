@@ -1,6 +1,7 @@
 import http from 'http';
 import { TransactionPool } from '../mempool/tx-pool';
 import { MonadBFTEngine } from '../consensus/monad-bft';
+import { faucetRequest } from '../wallet/send';
 
 export interface RPCRequest {
   jsonrpc: string;
@@ -30,26 +31,66 @@ export class JsonRpcServer {
 
   start(): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.server = http.createServer((req, res) => {
-        if (req.method !== 'POST') {
-          res.writeHead(405);
-          res.end('Method Not Allowed');
+      this.server = http.createServer(async (req, res) => {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+        if (req.method === 'OPTIONS') {
+          res.writeHead(204);
+          res.end();
           return;
         }
 
-        let body = '';
-        req.on('data', chunk => { body += chunk; });
-        req.on('end', () => {
-          try {
-            const request: RPCRequest = JSON.parse(body);
-            const response = this.handleRequest(request);
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify(response));
-          } catch (err) {
-            res.writeHead(400);
-            res.end(JSON.stringify({ error: 'Invalid JSON' }));
-          }
-        });
+        const url = req.url || '/';
+
+        if (req.method === 'GET' && (url === '/health' || url === '/healthz')) {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ status: 'HEALTHY', chainId: 723, blockNumber: 0 }));
+          return;
+        }
+
+        if (req.method === 'POST' && url === '/faucet') {
+          let body = '';
+          req.on('data', chunk => { body += chunk; });
+          req.on('end', () => {
+            try {
+              const { address, amount } = JSON.parse(body);
+              if (!address || typeof address !== 'string') {
+                res.writeHead(400);
+                res.end(JSON.stringify({ error: 'Missing address' }));
+                return;
+              }
+              const result = faucetRequest(this.pool, address, BigInt(amount || '1000000000000000000'));
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify(result));
+            } catch (err) {
+              res.writeHead(400);
+              res.end(JSON.stringify({ error: 'Invalid JSON' }));
+            }
+          });
+          return;
+        }
+
+        if (req.method === 'POST' && (url === '/' || url === '/rpc')) {
+          let body = '';
+          req.on('data', chunk => { body += chunk; });
+          req.on('end', () => {
+            try {
+              const request: RPCRequest = JSON.parse(body);
+              const response = this.handleRequest(request);
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify(response));
+            } catch (err) {
+              res.writeHead(400);
+              res.end(JSON.stringify({ error: 'Invalid JSON' }));
+            }
+          });
+          return;
+        }
+
+        res.writeHead(404);
+        res.end(JSON.stringify({ error: 'Endpoint not found' }));
       });
 
       this.server.listen(this.port, () => {

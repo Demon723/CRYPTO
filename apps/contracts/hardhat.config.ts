@@ -19,7 +19,8 @@ const config: HardhatUserConfig = {
       chainId: 31337
     },
     localhost: {
-      url: 'http://127.0.0.1:8545'
+      url: 'http://127.0.0.1:8545',
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
     },
     lxon: {
       url: 'http://3.110.221.224:8545',
