@@ -15,7 +15,7 @@ async function main() {
   if (network.chainId === 11155111n) {
     deploymentPath = path.join(__dirname, '..', 'deployments', 'sepolia.json');
   } else if (network.chainId === 31337n) {
-    deploymentPath = path.join(__dirname, '..', 'deployments', 'lxon.json');
+    deploymentPath = path.join(__dirname, '..', 'deployments', '31337.json');
   } else if (network.chainId === 723n) {
     deploymentPath = path.join(__dirname, '..', 'deployments', 'lxon-mainnet.json');
   } else {

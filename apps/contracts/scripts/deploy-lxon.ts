@@ -30,7 +30,9 @@ async function main() {
   console.log('\n🔥 Phase 4: Buyback deployment skipped (requires base token)');
 
   // Save deployment addresses
-  const deploymentPath = path.join(__dirname, '..', 'deployments', 'lxon.json');
+  const network = await ethers.provider.getNetwork();
+  const chainId = Number(network.chainId);
+  const deploymentPath = path.join(__dirname, '..', 'deployments', chainId === 31337 ? '31337.json' : 'lxon.json');
   fs.writeFileSync(deploymentPath, JSON.stringify(deploymentAddresses, null, 2));
   console.log('\n💾 Deployment addresses saved to:', deploymentPath);
 

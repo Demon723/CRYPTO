@@ -6,7 +6,10 @@ async function main() {
   console.log('🔥 Testing Burn Fee Mechanism on Local Network...\n');
 
   // Load deployment addresses
-  const deploymentPath = path.join(__dirname, '..', 'deployments', 'lxon.json');
+  const localPath = path.join(__dirname, '..', 'deployments', '31337.json');
+  const legacyPath = path.join(__dirname, '..', 'deployments', 'lxon.json');
+  const deploymentPath = fs.existsSync(localPath) ? localPath : legacyPath;
+  
   if (!fs.existsSync(deploymentPath)) {
     console.error('❌ Deployment file not found. Please deploy first.');
     process.exit(1);
