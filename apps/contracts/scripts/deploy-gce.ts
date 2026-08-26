@@ -5,12 +5,10 @@ import * as path from 'path';
 async function main() {
   console.log('🚀 Deploying Enhanced LXON Tokenomics to GCE Instance...\n');
 
-  const [deployer] = await ethers.getSigners();
+  const rpcUrl = process.env.LXON_RPC_URL || 'http://34.44.174.4:8545';
   console.log('📋 Deployment Information:');
-  console.log('  GCE Instance: 3.110.221.224:8545');
+  console.log('  RPC URL:', rpcUrl);
   console.log('  Network: LXON (Chain ID: 723)');
-  console.log('  Deployer Address:', deployer.address);
-  console.log('  Account Balance:', ethers.formatEther(await deployer.provider.getBalance(deployer.address)), 'LXON');
   console.log();
 
   // Safety check - verify this is LXON network
@@ -20,6 +18,11 @@ async function main() {
     console.error('Current Chain ID:', network.chainId.toString());
     process.exit(1);
   }
+
+  const [deployer] = await ethers.getSigners();
+  console.log('  Deployer Address:', deployer.address);
+  console.log('  Account Balance:', ethers.formatEther(await deployer.provider.getBalance(deployer.address)), 'LXON');
+  console.log();
 
   const deploymentAddresses: any = {};
 
@@ -48,9 +51,7 @@ async function main() {
   const mintAmount = ethers.parseUnits('1000000', 18); // 1M USDC
   const mintTx = await baseToken.mint(deployer.address, mintAmount);
   await mintTx.wait();
-  const treasuryBalance = await baseToken.balanceOf(deployer.address);
   console.log('✅ Minted 1,000,000 USDC to treasury (deployer)');
-  console.log('  Treasury Balance:', ethers.formatUnits(treasuryBalance, 18), 'USDC');
   console.log();
 
   // Phase 4: Deploy Buyback and Burn Contract
@@ -103,6 +104,11 @@ async function main() {
 
   // Save deployment addresses
   const deploymentPath = path.join(__dirname, '..', 'deployments', 'gce.json');
+  deploymentAddresses.network = network.name;
+  deploymentAddresses.chainId = Number(network.chainId);
+  deploymentAddresses.deployer = deployer.address;
+  deploymentAddresses.rpcUrl = rpcUrl;
+  deploymentAddresses.deployedAt = new Date().toISOString();
   fs.writeFileSync(deploymentPath, JSON.stringify(deploymentAddresses, null, 2));
   console.log('💾 Deployment addresses saved to:', deploymentPath);
   console.log();
@@ -110,7 +116,7 @@ async function main() {
   // Print summary
   console.log('📋 GCE Deployment Summary');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('GCE Instance: 3.110.221.224:8545');
+  console.log('RPC URL:', rpcUrl);
   console.log('LXON Token:', lxonAddress);
   console.log('Base Token (Mock USDC):', baseTokenAddress);
   console.log('Buyback and Burn:', buybackAddress);
@@ -125,22 +131,23 @@ async function main() {
   console.log('  ✅ Buyback and burn mechanism');
   console.log();
 
-  console.log('⚠️  Post-Deployment Tasks:');
-  console.log('  1. Set up proper multi-sig treasury');
-  console.log('  2. Replace mock USDC with real base token if needed');
-  console.log('  3. Test all tokenomics features');
-  console.log('  4. Monitor GCE instance performance');
-  console.log();
-
-  console.log('🔗 GCE Instance Details:');
-  console.log('  IP: 3.110.221.224');
-  console.log('  RPC Port: 8545');
-  console.log('  Network: LXON (Chain ID: 723)');
+  console.log('🔗 Network Details:');
+  console.log('  Chain ID:', Number(network.chainId));
+  console.log('  Deployer:', deployer.address);
 }
 
 main()
   .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
+  .catch(async (error) => {
+    console.error('❌ Deployment failed:', error);
+    
+    // Try to get more context
+    try {
+      const network = await ethers.provider.getNetwork();
+      console.error('Network:', network.name, 'Chain ID:', network.chainId.toString());
+    } catch (e) {
+      console.error('Could not get network info');
+    }
+    
     process.exit(1);
   });
