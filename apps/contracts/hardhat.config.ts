@@ -23,22 +23,22 @@ const config: HardhatUserConfig = {
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
     },
     lxon: {
-      url: 'http://3.110.221.224:8545',
+      url: 'http://35.209.94.197:8545',
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 723
     },
     lxonnative: {
-      url: 'http://3.110.221.224:8545',
+      url: 'http://35.209.94.197:8545',
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 723
     },
     lxonMainnet: {
-      url: process.env.LXON_RPC_URL || 'http://3.110.221.224:8545',
+      url: process.env.LXON_RPC_URL || 'http://35.209.94.197:8545',
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 723
     },
     gce: {
-      url: process.env.GCE_RPC_URL || 'http://3.110.221.224:8545',
+      url: process.env.GCE_RPC_URL || 'http://35.209.94.197:8545',
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 723
     },
@@ -55,6 +55,34 @@ const config: HardhatUserConfig = {
           : 'https://ethereum-sepolia-rpc.publicnode.com'),
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 11155111,
+      timeout: 120_000
+    },
+    arbitrumSepolia: {
+      url:
+        process.env.ARBITRUM_SEPOLIA_RPC_URL ||
+        'https://sepolia-rollup.arbitrum.io/rpc',
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 421614,
+      timeout: 120_000
+    },
+    arbitrum: {
+      url:
+        process.env.ARBITRUM_RPC_URL ||
+        (process.env.INFURA_API_KEY
+          ? `https://arbitrum-mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`
+          : 'https://arb1.arbitrum.io/rpc'),
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 42161,
+      timeout: 120_000
+    },
+    polygon: {
+      url:
+        process.env.POLYGON_RPC_URL ||
+        (process.env.INFURA_API_KEY
+          ? `https://polygon-mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`
+          : 'https://polygon-rpc.com'),
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 137,
       timeout: 120_000
     }
   },
