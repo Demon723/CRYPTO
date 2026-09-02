@@ -3,12 +3,22 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 async function main() {
-  console.log('🎯 Testing Tiered Staking Mechanism on Local Network...\n');
+  console.log('🎯 Testing Tiered Staking Mechanism...\n');
 
-  // Load deployment addresses
-  const localPath = path.join(__dirname, '..', 'deployments', '31337.json');
-  const legacyPath = path.join(__dirname, '..', 'deployments', 'lxon.json');
-  const deploymentPath = fs.existsSync(localPath) ? localPath : legacyPath;
+  // Load deployment addresses based on network
+  const network = await ethers.provider.getNetwork();
+  const chainId = Number(network.chainId);
+  
+  let deploymentPath;
+  if (chainId === 31337) {
+    deploymentPath = path.join(__dirname, '..', 'deployments', '31337.json');
+  } else if (chainId === 11155111) {
+    deploymentPath = path.join(__dirname, '..', 'deployments', 'sepolia.json');
+  } else if (chainId === 723) {
+    deploymentPath = path.join(__dirname, '..', 'deployments', 'lxon-mainnet.json');
+  } else {
+    deploymentPath = path.join(__dirname, '..', 'deployments', 'lxon.json');
+  }
   
   if (!fs.existsSync(deploymentPath)) {
     console.error('❌ Deployment file not found. Please deploy first.');

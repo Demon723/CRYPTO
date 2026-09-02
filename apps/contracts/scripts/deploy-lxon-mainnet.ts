@@ -6,17 +6,23 @@ async function main() {
   console.log('🚀 Deploying Enhanced LXON Tokenomics to LXON Mainnet (Chain ID: 723)...\n');
 
   const [deployer] = await ethers.getSigners();
+  
+  // Gnosis Safe Multi-Sig Address
+  const multiSigAddress = '0x18222bab07224d4Dad6c1295Aa53db3834D9bB90';
+  
   console.log('📋 Deployment Information:');
   console.log('  Network:', (await ethers.provider.getNetwork()).name);
   console.log('  Chain ID:', (await ethers.provider.getNetwork()).chainId.toString());
   console.log('  Deployer Address:', deployer.address);
-  console.log('  Account Balance:', ethers.formatEther(await deployer.provider.getBalance(deployer.address)), 'LXON');
+  console.log('  Multi-Sig Address:', multiSigAddress);
+  console.log('  Account Balance:', ethers.formatEther(await deployer.provider.getBalance(deployer.address)), 'ETH');
   console.log();
 
-  // Safety check - verify this is LXON network
+  // Safety check - verify this is LXON network, Sepolia testnet, or Arbitrum Sepolia
   const network = await ethers.provider.getNetwork();
-  if (network.chainId !== 723n) {
-    console.error('❌ ERROR: Not connected to LXON Mainnet (Chain ID: 723)');
+  const validChainIds = [723n, 11155111n, 421614n]; // LXON mainnet, Sepolia testnet, Arbitrum Sepolia
+  if (!validChainIds.includes(network.chainId)) {
+    console.error('❌ ERROR: Not connected to valid network (LXON Mainnet: 723, Sepolia: 11155111, Arbitrum Sepolia: 421614)');
     console.error('Current Chain ID:', network.chainId.toString());
     process.exit(1);
   }
@@ -26,10 +32,11 @@ async function main() {
   // Phase 1: Deploy LXON Native Token
   console.log('📦 Phase 1: Deploying LXON Native Token...');
   const LXONNativeToken = await ethers.getContractFactory('LXONNativeToken');
-  const lxonToken = await LXONNativeToken.deploy(deployer.address);
+  const lxonToken = await LXONNativeToken.deploy(multiSigAddress);
   await lxonToken.waitForDeployment();
   const lxonAddress = await lxonToken.getAddress();
   deploymentAddresses.lxonToken = lxonAddress;
+  deploymentAddresses.multiSig = multiSigAddress;
   console.log('✅ LXON Native Token deployed to:', lxonAddress);
   console.log();
 
@@ -63,14 +70,14 @@ async function main() {
   const buyback = await LXONBuybackBurn.deploy(
     lxonAddress,
     baseTokenAddress,
-    deployer.address, // Use deployer as treasury for now
+    multiSigAddress, // Use multi-sig as treasury
     buybackThreshold,
     buybackPercentage
   );
   await buyback.waitForDeployment();
   const buybackAddress = await buyback.getAddress();
   deploymentAddresses.buybackBurn = buybackAddress;
-  deploymentAddresses.treasury = deployer.address;
+  deploymentAddresses.treasury = multiSigAddress;
   
   console.log('✅ Buyback and Burn deployed to:', buybackAddress);
   console.log();
@@ -102,7 +109,17 @@ async function main() {
   console.log();
 
   // Save deployment addresses
-  const deploymentPath = path.join(__dirname, '..', 'deployments', 'lxon-mainnet.json');
+  let networkName;
+  if (network.chainId === 723n) {
+    networkName = 'lxon-mainnet';
+  } else if (network.chainId === 11155111n) {
+    networkName = 'sepolia';
+  } else if (network.chainId === 421614n) {
+    networkName = 'arbitrum-sepolia';
+  } else {
+    networkName = network.name;
+  }
+  const deploymentPath = path.join(__dirname, '..', 'deployments', `${networkName}.json`);
   fs.writeFileSync(deploymentPath, JSON.stringify(deploymentAddresses, null, 2));
   console.log('💾 Deployment addresses saved to:', deploymentPath);
   console.log();
@@ -113,7 +130,7 @@ async function main() {
   console.log('LXON Token:', lxonAddress);
   console.log('Base Token (Mock USDC):', baseTokenAddress);
   console.log('Buyback and Burn:', buybackAddress);
-  console.log('Treasury:', deployer.address);
+  console.log('Multi-Sig Treasury:', multiSigAddress);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log();
 
